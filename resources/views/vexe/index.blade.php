@@ -225,104 +225,15 @@
     }
     
     .booking-recovery-container {
-        display: flex;
         min-height: calc(100vh - 200px);
-        max-width: 1400px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 30px 20px;
     }
     
-    /* Sidebar */
-    .recovery-sidebar {
-        width: 280px;
-        background: white;
-        border-radius: 12px;
-        padding: 25px 20px;
-        margin-right: 25px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        height: fit-content;
-    }
-    
-    .sidebar-section {
-        margin-bottom: 30px;
-    }
-    
-    .sidebar-section h6 {
-        color: #2c3e50;
-        font-weight: 700;
-        font-size: 14px;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .sidebar-menu-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 15px;
-        color: #6c757d;
-        text-decoration: none;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        transition: all 0.3s;
-        font-size: 14px;
-    }
-    
-    .sidebar-menu-item i {
-        width: 24px;
-        margin-right: 12px;
-        font-size: 18px;
-    }
-    
-    .sidebar-menu-item:hover {
-        background: rgba(79, 185, 159, 0.1);
-        color: #4FB99F;
-    }
-    
-    .sidebar-menu-item.active {
-        background: linear-gradient(90deg, rgba(79, 185, 159, 0.15), rgba(79, 185, 159, 0.05));
-        color: #4FB99F;
-        font-weight: 600;
-        border-left: 3px solid #4FB99F;
-    }
-    
-    .booking-type-item {
-        display: flex;
-        align-items: center;
-        padding: 12px 15px;
-        color: #6c757d;
-        text-decoration: none;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        transition: all 0.3s;
-        font-size: 14px;
-        cursor: pointer;
-    }
-    
-    .booking-type-item i {
-        width: 24px;
-        margin-right: 12px;
-        font-size: 18px;
-    }
-    
-    .booking-type-item:hover {
-        background: rgba(79, 185, 159, 0.1);
-        color: #4FB99F;
-    }
-    
-    .booking-type-item.selected {
-        background: #4FB99F;
-        color: white;
-        font-weight: 600;
-    }
-    
-    .booking-type-item.selected i {
-        color: white;
-    }
-    
     /* Main Content */
     .recovery-main {
-        flex: 1;
+        width: 100%;
     }
     
     /* Info Banner */
@@ -344,18 +255,7 @@
         flex-shrink: 0;
     }
     
-    .info-banner-content h4 {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
-    
-    .info-banner-content p {
-        font-size: 14px;
-        opacity: 0.95;
-        line-height: 1.6;
-        margin: 0;
-    }
+ 
     
     .info-banner-close {
         position: absolute;
@@ -498,290 +398,56 @@
     }
     
     @media (max-width: 992px) {
-        .booking-recovery-container {
+        .alert-info .d-flex {
             flex-direction: column;
         }
         
-        .recovery-sidebar {
+        .alert-info .d-flex > div:last-child {
+            margin-left: 0;
+            margin-top: 15px;
             width: 100%;
-            margin-right: 0;
-            margin-bottom: 25px;
         }
         
-        .form-row-recovery {
-            grid-template-columns: 1fr;
+        .alert-info .d-flex > div:last-child .btn {
+            width: 100%;
+            margin-bottom: 10px;
         }
     }
 </style>
 
 <div class="booking-recovery-container">
-    <!-- Sidebar -->
-    <div class="recovery-sidebar">
-        <div class="sidebar-section">
-            <h6>Giao dịch đang tiến hành</h6>
-            <a href="#" class="sidebar-menu-item">
-                <i class="fas fa-list-check"></i>
-                Tất cả sản phẩm
-            </a>
-        </div>
-        
-        <div class="sidebar-section">
-            <h6>Khôi phục đặt chỗ</h6>
-            <div class="booking-type-item selected" data-type="vexe">
-                <i class="fas fa-bus"></i>
-                Vé xe
-            </div>
-        </div>
-    </div>
-    
     <!-- Main Content -->
     <div class="recovery-main">
-        <!-- Info Banner -->
-        <div class="info-banner" id="infoBanner">
-            <div class="info-banner-icon">
-                <i class="fas fa-window-restore"></i>
+        @if(!session('user') || session('role') != 'user')
+        <!-- Login Required Alert -->
+        <div class="alert alert-info d-flex align-items-center" role="alert" style="background: linear-gradient(135deg, #4FB99F 0%, #3a8f7a 100%); color: white; border: none; border-radius: 12px; padding: 20px 25px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(79, 185, 159, 0.3);">
+            <div style="font-size: 32px; margin-right: 20px;">
+                <i class="fas fa-info-circle"></i>
             </div>
-            <div class="info-banner-content">
-                <h4>Dễ dàng truy cập đặt chỗ của bạn trên Bustrip</h4>
-                <p>Đăng nhập vào tài khoản Bustrip hoặc đăng ký để xem các đặt chỗ hiện tại và trước đây của bạn, cũng như quản lý mọi vấn đề liên quan tới đặt chỗ (ví dụ: yêu cầu hoàn tiền hoặc đổi lịch).</p>
-            </div>
-            <button type="button" class="info-banner-close" onclick="document.getElementById('infoBanner').style.display='none'">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <!-- Recovery Form -->
-        <div class="recovery-form-card">
-            <h2 class="recovery-form-title">Khôi phục đặt chỗ</h2>
-            
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-            
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-            
-            <form method="GET" action="{{ route('vexe.index') }}" id="recoveryForm">
-                <div class="form-row-recovery">
-                    <div class="form-group-recovery">
-                        <label for="ma_dat_cho">Mã đặt chỗ Bustrip</label>
-                        <input type="text" 
-                               id="ma_dat_cho" 
-                               name="ma_ve" 
-                               class="form-control" 
-                               placeholder="Nhập mã đặt chỗ"
-                               value="{{ request('ma_ve') }}"
-                               required>
-                    </div>
-                    
-                    <div class="form-group-recovery">
-                        <label for="ngay_khoi_hanh">Ngày khởi hành</label>
-                        <input type="date" 
-                               id="ngay_khoi_hanh" 
-                               name="ngay_khoi_hanh" 
-                               class="form-control"
-                               value="{{ request('ngay_khoi_hanh', date('Y-m-d')) }}"
-                               required>
-                    </div>
-                </div>
-                
-                <div class="form-group-recovery">
-                    <label for="so_dien_thoai">Số di động</label>
-                    <div class="phone-input-group">
-                        <select class="phone-country form-control" id="country_code" name="country_code">
-                            <option value="+84" selected>🇻🇳 +84</option>
-                            <option value="+1">🇺🇸 +1</option>
-                            <option value="+86">🇨🇳 +86</option>
-                        </select>
-                        <input type="text" 
-                               id="so_dien_thoai" 
-                               name="sdt" 
-                               class="phone-number form-control" 
-                               placeholder="Nhập số điện thoại"
-                               value="{{ request('sdt') }}"
-                               required>
-                        <button type="submit" class="btn-recover">
-                            Khôi phục đặt chỗ
-                        </button>
-                    </div>
-                    <small class="form-help-text">Số điện thoại bạn cung cấp khi đặt chỗ.</small>
-                </div>
-            </form>
-            
-            <div class="form-instruction">
-                <p>
-                    <strong>Lưu ý:</strong> Sau khi gửi biểu mẫu bên trên, chúng tôi sẽ gửi vé điện tử trực tiếp đến địa chỉ email bạn đã sử dụng khi đặt chỗ. Biểu mẫu này cũng có thể sử dụng để hoàn thành các giao dịch chưa thanh toán của bạn.
+            <div style="flex: 1;">
+                <h5 class="mb-2" style="font-weight: 700; margin: 0;">Vui lòng đăng nhập để xem đặt chỗ của bạn</h5>
+                <p class="mb-0" style="opacity: 0.95; line-height: 1.6;">
+                    Đăng nhập vào tài khoản Bustrip của bạn để xem tất cả các đặt chỗ hiện tại và trước đây, cũng như quản lý các vấn đề liên quan đến đặt chỗ (ví dụ: yêu cầu hoàn tiền hoặc đổi lịch).
                 </p>
             </div>
+            <div style="margin-left: 20px; display: flex; gap: 10px; flex-shrink: 0;">
+                <a href="{{ route('login.form') }}" class="btn btn-light" style="border-radius: 8px; padding: 10px 20px; font-weight: 600; white-space: nowrap;">
+                    <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                </a>
+                <a href="{{ route('register.form') }}" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; padding: 10px 20px; font-weight: 600; white-space: nowrap;">
+                    <i class="fas fa-user-plus me-2"></i>Đăng ký
+                </a>
+            </div>
+        </div>
+        @endif
+        
+        <!-- Info Banner -->
+        
+           
+           
         </div>
         
-        <!-- Booking Results -->
-        @if(request()->has('sdt') && request()->has('ma_ve'))
-            @php
-                $ve = \App\Models\VeXe::with(['chuyenXe.tuyenDuong', 'chuyenXe.nhaXe', 'nguoiDung', 'ghe', 'thanhToan'])
-                    ->whereHas('nguoiDung', function($q) {
-                        $q->where('SDT', request('sdt'));
-                    })
-                    ->where('MaVe', request('ma_ve'));
-                
-                // Nếu có ngày khởi hành, kiểm tra thêm
-                if (request()->has('ngay_khoi_hanh') && request('ngay_khoi_hanh')) {
-                    $ve->whereHas('chuyenXe', function($q) {
-                        $q->whereDate('GioKhoiHanh', request('ngay_khoi_hanh'));
-                    });
-                }
-                
-                $ve = $ve->first();
-            @endphp
-            
-            @if($ve)
-                <div class="booking-results">
-                    <div class="booking-card">
-                        <div class="d-flex justify-content-between align-items-start mb-4">
-                            <div>
-                                <h4 class="mb-2" style="color: #2c3e50;">
-                                    <i class="fas fa-ticket-alt me-2" style="color: #4FB99F;"></i>
-                                    Thông tin đặt chỗ
-                                </h4>
-                                <p class="text-muted mb-0">Mã đặt chỗ: <strong>#{{ $ve->MaVe }}</strong></p>
-                            </div>
-                            @php
-                                $statusClass = 'warning';
-                                $statusBg = '#fff3cd';
-                                $statusColor = '#856404';
-                                if ($ve->TrangThai == 'Đã thanh toán') {
-                                    $statusClass = 'success';
-                                    $statusBg = '#d4edda';
-                                    $statusColor = '#155724';
-                                } elseif (strpos($ve->TrangThai, 'Hủy') !== false) {
-                                    $statusClass = 'danger';
-                                    $statusBg = '#f8d7da';
-                                    $statusColor = '#721c24';
-                                }
-                            @endphp
-                            <span class="badge" style="background: {{ $statusBg }}; color: {{ $statusColor }}; padding: 8px 16px; font-size: 14px; font-weight: 600;">
-                                {{ $ve->TrangThai }}
-                            </span>
-                        </div>
-                        
-                        <div class="row g-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="text-muted small">Khách hàng</label>
-                                    <p class="mb-0 fw-semibold">{{ $ve->nguoiDung->HoTen ?? '---' }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small">Số điện thoại</label>
-                                    <p class="mb-0 fw-semibold">{{ $ve->nguoiDung->SDT ?? '---' }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small">Email</label>
-                                    <p class="mb-0 fw-semibold">{{ $ve->nguoiDung->Email ?? '---' }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="text-muted small">Tuyến đường</label>
-                                    <p class="mb-0 fw-semibold">
-                                        <i class="fas fa-map-marker-alt text-danger me-1"></i>
-                                        {{ $ve->chuyenXe->tuyenDuong->DiemDi ?? '---' }}
-                                        <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                                        <i class="fas fa-map-marker-alt text-success me-1"></i>
-                                        {{ $ve->chuyenXe->tuyenDuong->DiemDen ?? '---' }}
-                                    </p>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small">Nhà xe</label>
-                                    <p class="mb-0 fw-semibold">{{ $ve->chuyenXe->nhaXe->TenNhaXe ?? '---' }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="text-muted small">Ghế số</label>
-                                    <p class="mb-0 fw-semibold">
-                                        <span class="badge" style="background: #4FB99F; color: white; padding: 6px 12px;">
-                                            {{ $ve->ghe->SoGhe ?? '---' }}
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="row g-4">
-                            <div class="col-md-4">
-                                <label class="text-muted small">Giờ khởi hành</label>
-                                <p class="mb-0 fw-semibold">
-                                    <i class="far fa-clock me-2" style="color: #4FB99F;"></i>
-                                    {{ \Carbon\Carbon::parse($ve->chuyenXe->GioKhoiHanh)->format('d/m/Y H:i') }}
-                                </p>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="text-muted small">Ngày đặt</label>
-                                <p class="mb-0 fw-semibold">
-                                    <i class="far fa-calendar me-2" style="color: #4FB99F;"></i>
-                                    {{ \Carbon\Carbon::parse($ve->NgayDat)->format('d/m/Y H:i') }}
-                                </p>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="text-muted small">Giá vé</label>
-                                <p class="mb-0 fw-semibold" style="color: #4FB99F; font-size: 18px;">
-                                    {{ number_format($ve->GiaTaiThoiDiemDat) }} ₫
-                                </p>
-                            </div>
-                        </div>
-                        
-                        @if($ve->thanhToan)
-                            <hr class="my-4">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <label class="text-muted small">Phương thức thanh toán</label>
-                                    <p class="mb-0 fw-semibold">{{ $ve->thanhToan->PhuongThuc }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="text-muted small">Ngày thanh toán</label>
-                                    <p class="mb-0 fw-semibold">
-                                        {{ \Carbon\Carbon::parse($ve->thanhToan->NgayThanhToan)->format('d/m/Y H:i') }}
-                                    </p>
-                                </div>
-                            </div>
-                        @endif
-                        
-                        <div class="mt-4 pt-4 border-top">
-                            <a href="{{ route('vexe.show', $ve->MaVe) }}" class="btn" style="background: #4FB99F; color: white; padding: 10px 25px; border-radius: 8px; text-decoration: none;">
-                                <i class="fas fa-eye me-2"></i>Xem chi tiết
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="booking-results">
-                    <div class="alert alert-warning" style="border-radius: 12px; padding: 20px;">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Không tìm thấy đặt chỗ</strong><br>
-                        Không tìm thấy đặt chỗ với thông tin đã nhập. Vui lòng kiểm tra lại mã đặt chỗ, ngày khởi hành và số điện thoại.
-                    </div>
-                </div>
-            @endif
-        @endif
     </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Set today's date as default if not provided
-    const ngayKhoiHanh = document.getElementById('ngay_khoi_hanh');
-    if (ngayKhoiHanh && !ngayKhoiHanh.value) {
-        ngayKhoiHanh.value = new Date().toISOString().split('T')[0];
-    }
-});
-</script>
 @endif
 @endsection

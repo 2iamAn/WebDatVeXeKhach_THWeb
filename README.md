@@ -85,7 +85,7 @@ BUSTRIP là hệ thống đặt vé xe khách trực tuyến được xây dựn
 
 ### Bước 1: Clone dự án
 ```bash
-git clone <repository-url>
+git clone https://github.com/2iamAn/WebDatVeXeKhach_THWeb.git
 cd DatVeXeKhach
 ```
 
@@ -295,4 +295,4 @@ Dự án này được phát triển cho mục đích học tập và nghiên c�
 
 **Phát triển bởi**: BUSTRIP Team  
 **Phiên bản**: 1.0.0  
-**Cập nhật**: 2024
+**Cập nhật**: 2025
