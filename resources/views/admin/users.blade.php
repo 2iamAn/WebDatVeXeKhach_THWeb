@@ -35,7 +35,7 @@
                         <tbody>
                             @foreach($users as $user)
                                 <tr>
-                                    <td><strong>#{{ $user->MaNguoiDung }}</strong></td>
+                                    <td><strong>{{ $user->MaNguoiDung }}</strong></td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
@@ -123,50 +123,52 @@
                                                 <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
-                                        
-                                        <!-- Modal Từ chối -->
-                                        <div class="modal fade" id="rejectModal{{ $user->MaNguoiDung }}" tabindex="-1">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header bg-danger text-white">
-                                                        <h5 class="modal-title">
-                                                            <i class="fas fa-times-circle me-2"></i>
-                                                            Từ chối tài khoản #{{ $user->MaNguoiDung }}
-                                                        </h5>
-                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <form method="POST" action="{{ route('admin.users.reject', $user->MaNguoiDung) }}">
-                                                        @csrf
-                                                        <div class="modal-body">
-                                                            <div class="mb-3">
-                                                                <label class="form-label fw-semibold">
-                                                                    <i class="fas fa-comment-alt me-2"></i>
-                                                                    Lý do từ chối <span class="text-danger">*</span>
-                                                                </label>
-                                                                <textarea name="LyDoTuChoi" 
-                                                                          class="form-control" 
-                                                                          rows="4" 
-                                                                          required
-                                                                          placeholder="Nhập lý do từ chối tài khoản này..."></textarea>
-                                                                <small class="text-muted">Tài khoản sẽ bị khóa sau khi từ chối.</small>
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                            <button type="submit" class="btn btn-danger">
-                                                                <i class="fas fa-times me-2"></i>Xác nhận từ chối
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Modal Từ chối - Đặt bên ngoài bảng để tránh trùng lặp -->
+                @foreach($users as $user)
+                <div class="modal fade" id="rejectModal{{ $user->MaNguoiDung }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-times-circle me-2"></i>
+                                    Từ chối tài khoản {{ $user->MaNguoiDung }}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="POST" action="{{ route('admin.users.reject', $user->MaNguoiDung) }}">
+                                @csrf
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">
+                                            <i class="fas fa-comment-alt me-2"></i>
+                                            Lý do từ chối <span class="text-danger">*</span>
+                                        </label>
+                                        <textarea name="LyDoTuChoi" 
+                                                  class="form-control" 
+                                                  rows="4" 
+                                                  required
+                                                  placeholder="Nhập lý do từ chối tài khoản này..."></textarea>
+                                        <small class="text-muted">Tài khoản sẽ bị khóa sau khi từ chối.</small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-times me-2"></i>Xác nhận từ chối
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
             @else
                 <div class="empty-state">
                     <i class="fas fa-users"></i>

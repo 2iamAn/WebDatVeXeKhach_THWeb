@@ -171,7 +171,7 @@
                 
                 <div class="ticket-info-item">
                     <span class="ticket-info-label">Mã vé:</span>
-                    <span class="ticket-info-value">#{{ $ve->MaVe }}</span>
+                    <span class="ticket-info-value">{{ $ve->MaVe }}</span>
                 </div>
                 
                 <div class="ticket-info-item">

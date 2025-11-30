@@ -109,7 +109,7 @@
                                 <div class="modal-header bg-danger text-white">
                                     <h5 class="modal-title">
                                         <i class="fas fa-times-circle me-2"></i>
-                                        Từ chối chuyến xe #{{ $trip->MaChuyenXe }}
+                                        Từ chối chuyến xe {{ $trip->MaChuyenXe }}
                                     </h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
@@ -187,7 +187,7 @@
                         <tbody>
                             @foreach($allTrips as $trip)
                                 <tr>
-                                    <td><strong>#{{ $trip->MaChuyenXe }}</strong></td>
+                                    <td><strong>{{ $trip->MaChuyenXe }}</strong></td>
                                     <td>{{ $trip->TenNhaXe ?? 'N/A' }}</td>
                                     <td>{{ $trip->DiemDi ?? '--' }} → {{ $trip->DiemDen ?? '--' }}</td>
                                     <td>{{ \Carbon\Carbon::parse($trip->GioKhoiHanh)->format('d/m/Y H:i') }}</td>
@@ -273,7 +273,7 @@
                                                             <div class="modal-header bg-danger text-white">
                                                                 <h5 class="modal-title">
                                                                     <i class="fas fa-lock me-2"></i>
-                                                                    Khóa tạm thời chuyến xe #{{ $trip->MaChuyenXe }}
+                                                                    Khóa tạm thời chuyến xe {{ $trip->MaChuyenXe }}
                                                                 </h5>
                                                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                                             </div>

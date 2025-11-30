@@ -39,7 +39,7 @@
                   $bookingTime = optional($v->NgayDat)->format('d/m/Y H:i') ?? '--';
                 @endphp
                 <tr>
-                  <td class="fw-semibold">#{{ $v->MaVe }}</td>
+                  <td class="fw-semibold">{{ $v->MaVe }}</td>
                   <td class="fw-semibold text-primary">Chuyến #{{ $v->MaChuyenXe }}</td>
                   <td>{{ optional($v->nguoiDung)->HoTen ?? 'Khách lẻ' }}</td>
                   <td><span class="badge-status info">Ghế {{ optional($v->ghe)->SoGhe ?? '--' }}</span></td>
@@ -152,7 +152,7 @@
                       @endphp
                       <tr style="transition: all 0.3s;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
                         <td style="padding: 15px;">
-                          <strong class="text-primary">#{{ $v->MaVe }}</strong>
+                          <strong class="text-primary">{{ $v->MaVe }}</strong>
                         </td>
                         <td style="padding: 15px;">
                           <i class="fas fa-building text-info me-2"></i>
@@ -188,7 +188,7 @@
                         </td>
                         <td style="padding: 15px; text-align: center;">
                           @if($canCancel)
-                            <form method="POST" action="{{ route('vexe.cancel', $v->MaVe) }}" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé #{{ $v->MaVe }}?');">
+                            <form method="POST" action="{{ route('vexe.cancel', $v->MaVe) }}" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé {{ $v->MaVe }}?');">
                               @csrf
                               <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 8px;">
                                 <i class="fas fa-times-circle me-1"></i>Hủy vé

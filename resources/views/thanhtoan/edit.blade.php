@@ -9,7 +9,7 @@
     <select name="MaVe" class="form-select" required>
       @forelse($ves as $ve)
         <option value="{{ $ve->MaVe }}" @selected($pay->MaVe == $ve->MaVe)>
-          Vé #{{ $ve->MaVe }} - Ghế {{ optional($ve->ghe)->SoGhe }}
+          Vé {{ $ve->MaVe }} - Ghế {{ optional($ve->ghe)->SoGhe }}
         </option>
       @empty
         <option value="" disabled>Chưa có vé</option>

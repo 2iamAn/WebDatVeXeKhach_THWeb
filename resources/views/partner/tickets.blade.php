@@ -68,7 +68,7 @@
                             <td style="padding: 15px;">
                                 <strong class="text-primary">
                                     <i class="fas fa-ticket-alt me-1"></i>
-                                    #{{ $v->MaVe }}
+                                    {{ $v->MaVe }}
                                 </strong>
                             </td>
                             <td style="padding: 15px;">
@@ -159,7 +159,7 @@
                                             <form method="POST" action="{{ route('partner.tickets.update-status', $v->MaVe) }}" style="display: inline;">
                                                 @csrf
                                                 <input type="hidden" name="TrangThai" value="Đã đi">
-                                                <button type="submit" class="dropdown-item" onclick="return confirm('Xác nhận đổi trạng thái vé #{{ $v->MaVe }} sang \"Đã đi\"?')">
+                                                <button type="submit" class="dropdown-item" onclick="return confirm('Xác nhận đổi trạng thái vé {{ $v->MaVe }} sang \"Đã đi\"?')">
                                                     <i class="fas fa-check-circle text-success me-2"></i>Đã đi
                                                 </button>
                                             </form>
@@ -168,7 +168,7 @@
                                             <form method="POST" action="{{ route('partner.tickets.update-status', $v->MaVe) }}" style="display: inline;">
                                                 @csrf
                                                 <input type="hidden" name="TrangThai" value="Hủy">
-                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Xác nhận hủy vé #{{ $v->MaVe }}?')">
+                                                <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Xác nhận hủy vé {{ $v->MaVe }}?')">
                                                     <i class="fas fa-times-circle me-2"></i>Hủy
                                                 </button>
                                             </form>
@@ -177,7 +177,7 @@
                                             <form method="POST" action="{{ route('partner.tickets.update-status', $v->MaVe) }}" style="display: inline;">
                                                 @csrf
                                                 <input type="hidden" name="TrangThai" value="Hoàn tiền">
-                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('Xác nhận hoàn tiền cho vé #{{ $v->MaVe }}?')">
+                                                <button type="submit" class="dropdown-item text-warning" onclick="return confirm('Xác nhận hoàn tiền cho vé {{ $v->MaVe }}?')">
                                                     <i class="fas fa-undo me-2"></i>Hoàn tiền
                                                 </button>
                                             </form>
@@ -187,7 +187,7 @@
                                             <form method="POST" action="{{ route('partner.tickets.update-status', $v->MaVe) }}" style="display: inline;">
                                                 @csrf
                                                 <input type="hidden" name="TrangThai" value="Đã thanh toán">
-                                                <button type="submit" class="dropdown-item text-info" onclick="return confirm('Xác nhận đổi trạng thái vé #{{ $v->MaVe }} sang \"Đã thanh toán\"?')">
+                                                <button type="submit" class="dropdown-item text-info" onclick="return confirm('Xác nhận đổi trạng thái vé {{ $v->MaVe }} sang \"Đã thanh toán\"?')">
                                                     <i class="fas fa-check me-2"></i>Đã thanh toán
                                                 </button>
                                             </form>
@@ -196,7 +196,7 @@
                                             <form method="POST" action="{{ route('partner.tickets.update-status', $v->MaVe) }}" style="display: inline;">
                                                 @csrf
                                                 <input type="hidden" name="TrangThai" value="Chưa thanh toán">
-                                                <button type="submit" class="dropdown-item text-muted" onclick="return confirm('Xác nhận đổi trạng thái vé #{{ $v->MaVe }} sang \"Chưa thanh toán\"?')">
+                                                <button type="submit" class="dropdown-item text-muted" onclick="return confirm('Xác nhận đổi trạng thái vé {{ $v->MaVe }} sang \"Chưa thanh toán\"?')">
                                                     <i class="fas fa-clock me-2"></i>Chưa thanh toán
                                                 </button>
                                             </form>

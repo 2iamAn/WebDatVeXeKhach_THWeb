@@ -276,25 +276,99 @@ class AdminController extends Controller
     // ===========================
     // BÁO CÁO THỐNG KÊ
     // ===========================
-    public function reports(): View
+    public function reports(Request $request): View
     {
+        // Lấy danh sách nhà xe cho dropdown
+        $nhaxes = NhaXe::orderBy('TenNhaXe')->get();
+
+        // Xử lý filter
+        $maNhaXe = $request->input('ma_nha_xe');
+        $tuNgay = $request->input('tu_ngay', now()->format('Y-m-d'));
+        $denNgay = $request->input('den_ngay', now()->format('Y-m-d'));
+        $loaiThoiGian = $request->input('loai_thoi_gian', 'ngay'); // ngay, thang, tuy_chon
+
+        // Xác định khoảng thời gian
+        if ($loaiThoiGian === 'ngay') {
+            $startDate = now()->startOfDay();
+            $endDate = now()->endOfDay();
+        } elseif ($loaiThoiGian === 'thang') {
+            $startDate = now()->startOfMonth();
+            $endDate = now()->endOfMonth();
+        } else {
+            $startDate = \Carbon\Carbon::parse($tuNgay)->startOfDay();
+            $endDate = \Carbon\Carbon::parse($denNgay)->endOfDay();
+        }
+
+        // Query base với filter nhà xe
+        $thanhToanQuery = ThanhToan::whereBetween('NgayThanhToan', [$startDate, $endDate]);
+        $veXeQuery = VeXe::whereBetween('NgayDat', [$startDate, $endDate]);
+        $chuyenXeQuery = ChuyenXe::whereBetween('GioKhoiHanh', [$startDate, $endDate]);
+
+        if ($maNhaXe) {
+            $thanhToanQuery->whereHas('veXe.chuyenXe', function($q) use ($maNhaXe) {
+                $q->where('chuyenxe.MaNhaXe', $maNhaXe);
+            });
+            $veXeQuery->whereHas('chuyenXe', function($q) use ($maNhaXe) {
+                $q->where('MaNhaXe', $maNhaXe);
+            });
+            $chuyenXeQuery->where('MaNhaXe', $maNhaXe);
+        }
+
+        // Tính toán các chỉ số
+        $doanhThu = $thanhToanQuery->sum('SoTien');
+        $tongSoVe = $veXeQuery->count();
+        $soChuyenChay = $chuyenXeQuery->count();
+
+        // Doanh thu hôm nay và tháng này (không filter)
         $doanhThuNgay = ThanhToan::whereDate('NgayThanhToan', now())->sum('SoTien');
         $doanhThuThang = ThanhToan::whereMonth('NgayThanhToan', now()->month)
             ->whereYear('NgayThanhToan', now()->year)
             ->sum('SoTien');
+        
+        // Tổng số vé hôm nay và tháng này
+        $tongSoVeNgay = VeXe::whereDate('NgayDat', now())->count();
+        $tongSoVeThang = VeXe::whereMonth('NgayDat', now()->month)
+            ->whereYear('NgayDat', now()->year)
+            ->count();
+        
+        // Số chuyến chạy hôm nay
+        $soChuyenChayNgay = ChuyenXe::whereDate('GioKhoiHanh', now())->count();
 
-        $topTuyen = VeXe::select(
+        // Top tuyến đường (có thể filter theo nhà xe)
+        $topTuyenQuery = VeXe::select(
                 DB::raw("CONCAT(tuyenduong.DiemDi, ' - ', tuyenduong.DiemDen) as TuyenDuong"),
                 DB::raw('COUNT(*) as SoLuong')
             )
             ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
             ->join('tuyenduong', 'chuyenxe.MaTuyen', '=', 'tuyenduong.MaTuyen')
+            ->whereBetween('vexe.NgayDat', [$startDate, $endDate]);
+
+        if ($maNhaXe) {
+            $topTuyenQuery->where('chuyenxe.MaNhaXe', $maNhaXe);
+        }
+
+        $topTuyen = $topTuyenQuery
             ->groupBy('tuyenduong.MaTuyen', 'tuyenduong.DiemDi', 'tuyenduong.DiemDen')
             ->orderByDesc('SoLuong')
             ->limit(5)
             ->get();
 
-        return view('admin.reports', compact('doanhThuNgay', 'doanhThuThang', 'topTuyen'));
+        return view('admin.reports', compact(
+            'doanhThuNgay', 
+            'doanhThuThang',
+            'tongSoVeNgay',
+            'tongSoVeThang',
+            'soChuyenChayNgay',
+            'doanhThu',
+            'tongSoVe',
+            'soChuyenChay',
+            'topTuyen',
+            'nhaxes',
+            'maNhaXe',
+            'tuNgay',
+            'denNgay',
+            'loaiThoiGian'
+        ));
     }
 
     // ===========================

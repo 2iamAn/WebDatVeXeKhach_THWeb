@@ -75,7 +75,7 @@
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
-                                <h5 class="mb-1">Tuyến đường #{{ $route->MaTuyen }}</h5>
+                                <h5 class="mb-1">Tuyến đường {{ $route->MaTuyen }}</h5>
                                 <span class="badge bg-warning badge-custom">
                                     <i class="fas fa-clock me-1"></i> Chờ duyệt
                                 </span>
@@ -148,7 +148,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p>Bạn có chắc chắn muốn từ chối tuyến đường <strong>#{{ $route->MaTuyen }}</strong>?</p>
+                                    <p>Bạn có chắc chắn muốn từ chối tuyến đường <strong>{{ $route->MaTuyen }}</strong>?</p>
                                     <div class="mb-3">
                                         <label class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
                                         <textarea name="LyDoTuChoi" class="form-control" rows="3" required placeholder="Nhập lý do từ chối..."></textarea>
@@ -192,7 +192,7 @@
                     <tbody>
                         @foreach($approvedRoutes as $route)
                         <tr>
-                            <td>#{{ $route->MaTuyen }}</td>
+                            <td>{{ $route->MaTuyen }}</td>
                             <td>{{ $route->TenNhaXe }}</td>
                             <td>{{ $route->DiemDi }}</td>
                             <td>{{ $route->DiemDen }}</td>
@@ -233,7 +233,7 @@
                     <tbody>
                         @foreach($rejectedRoutes as $route)
                         <tr>
-                            <td>#{{ $route->MaTuyen }}</td>
+                            <td>{{ $route->MaTuyen }}</td>
                             <td>{{ $route->TenNhaXe }}</td>
                             <td>{{ $route->DiemDi }}</td>
                             <td>{{ $route->DiemDen }}</td>

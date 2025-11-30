@@ -156,8 +156,12 @@ class ChuyenXeController extends Controller
             // Map thoiGianHanhTrinh từ tuyenDuong
             $chuyen->thoiGianHanhTrinh = $chuyen->tuyenDuong?->ThoiGianHanhTrinh ?? null;
             $tongGhe = $chuyen->ghe->count();
+            // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
             $gheDaDat = VeXe::where('MaChuyenXe', $chuyen->MaChuyenXe)
                 ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+                ->whereHas('thanhToan', function($query) {
+                    $query->where('TrangThai', 'Success');
+                })
                 ->count();
             $chuyen->so_ghe_trong = max(0, $tongGhe - $gheDaDat);
             

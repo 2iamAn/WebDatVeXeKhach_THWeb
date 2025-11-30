@@ -175,7 +175,7 @@
                         <tbody>
                             @foreach($chuyen->veXe as $ve)
                                 <tr>
-                                    <td><strong>#{{ $ve->MaVe }}</strong></td>
+                                    <td><strong>{{ $ve->MaVe }}</strong></td>
                                     <td>{{ optional($ve->nguoiDung)->HoTen ?? 'N/A' }}</td>
                                     <td>
                                         <span class="badge bg-info">

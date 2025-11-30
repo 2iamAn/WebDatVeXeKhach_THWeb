@@ -684,11 +684,11 @@ input[type="radio"] {
 
 .content-area {
   flex: 1;
-  padding: 32px 0 60px;
+  padding: 0px 0 0px;
 }
 
 .page-hero {
-  background: linear-gradient(120deg, rgba(79, 185, 159, 0.15), rgba(107, 196, 176, 0.15));
+  background: linear-gradient(120deg, rgba(31, 159, 127, 0.15), rgba(107, 196, 176, 0.15));
   padding: 32px 0;
   border-bottom: 1px solid rgba(79, 185, 159, 0.1);
 }
@@ -959,7 +959,7 @@ input[type="radio"] {
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
+  color: white;
   border: none;
   background: transparent;
 }
@@ -1022,8 +1022,8 @@ input[type="radio"] {
 .footer-content {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 40px;
-  max-width: 1200px;
+  gap: 30px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -1051,8 +1051,17 @@ input[type="radio"] {
   color: rgba(255, 255, 255, 0.9);
   font-size: 14px;
   font-weight: 600;
-  margin: 0;
+  margin: 10px 0;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+}
+
+.footer-description {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 15px 0 0 0;
 }
 
 .footer-section {
@@ -1066,6 +1075,13 @@ input[type="radio"] {
   margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+}
+
+.footer-heading i {
+  font-size: 14px;
+  opacity: 0.9;
 }
 
 .footer-links {
@@ -1083,12 +1099,58 @@ input[type="radio"] {
   text-decoration: none;
   font-size: 14px;
   transition: all 0.3s ease;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.footer-links a i {
+  width: 18px;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .footer-links a:hover {
   color: #fff;
   transform: translateX(5px);
+  text-decoration: none;
+}
+
+.footer-links a:hover i {
+  opacity: 1;
+  color: #fff;
+}
+
+.footer-contact-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-contact-info li {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.footer-contact-info li i {
+  width: 20px;
+  margin-top: 3px;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.footer-contact-info li a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.footer-contact-info li a:hover {
+  color: #fff;
   text-decoration: underline;
 }
 
@@ -1123,16 +1185,62 @@ input[type="radio"] {
 }
 
 .footer-bottom {
-  background: #000;
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
-  padding: 20px 0;
+  padding: 25px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom-content {
   text-align: center;
 }
 
 .footer-bottom p {
-  margin: 5px 0;
+  margin: 8px 0;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.footer-bottom p i {
+  opacity: 0.7;
+}
+
+/* Social Media Links */
+.social-links {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-link:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.social-link i {
+  font-size: 16px;
 }
 
 @media (max-width: 992px) {
@@ -1159,6 +1267,25 @@ input[type="radio"] {
   .payment-logo {
     height: 50px;
     padding: 8px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .footer-heading {
+    font-size: 14px;
+  }
+
+  .footer-links a,
+  .footer-contact-info li {
+    font-size: 13px;
   }
 }
 

@@ -145,7 +145,7 @@ public function trips(Request $request)
 {
     $maNhaXe = $this->ensurePartner();
 
-    $query = ChuyenXe::with(['tuyenDuong', 'ghe', 'veXe', 'xe'])
+    $query = ChuyenXe::with(['tuyenDuong', 'ghe', 'veXe.thanhToan', 'xe'])
         ->where('MaNhaXe', $maNhaXe);
 
     // Lọc theo tháng nếu có
@@ -174,10 +174,11 @@ public function trips(Request $request)
             // Tính số ghế trống và đã đặt
             $tongGhe = $trip->ghe->count();
             
-            // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền")
+            // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền") và đã thanh toán thành công
             $gheDaDat = $trip->veXe->filter(function($ve) {
                 $trangThai = strtolower($ve->TrangThai ?? '');
-                return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien']);
+                return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien'])
+                    && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
             })->count();
             
             // Nếu chưa có ghế nào trong bảng Ghe, lấy từ thông tin xe
@@ -242,9 +243,13 @@ public function seats(Request $request)
     
     if ($maChuyenXeSelected) {
         // Lấy thông tin chi tiết vé và người đặt cho mỗi ghế CỦA CHUYẾN ĐƯỢC CHỌN
+        // Chỉ lấy vé đã thanh toán thành công
         $veXeInfo = VeXe::with(['nguoiDung', 'ghe', 'chuyenXe', 'thanhToan'])
             ->where('MaChuyenXe', $maChuyenXeSelected)
             ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+            ->whereHas('thanhToan', function($query) {
+                $query->where('TrangThai', 'Success');
+            })
             ->get();
         
         $gheDaDat = $veXeInfo->pluck('MaGhe')->toArray();
@@ -332,10 +337,11 @@ public function seats(Request $request)
             $soGheChuyen = $chuyen->xe->SoGhe;
         }
         
-        // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền")
+        // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền") và đã thanh toán thành công
         $veDaDat = $chuyen->veXe->filter(function($ve) {
             $trangThai = strtolower($ve->TrangThai ?? '');
-            return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien']);
+            return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien'])
+                && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
         })->count();
         
         // Xử lý xe 34 chỗ
@@ -432,9 +438,12 @@ public function lockSeat(Request $request, $maGhe)
         return response()->json(['success' => false, 'message' => 'Bạn không có quyền khóa ghế này!'], 403);
     }
     
-    // Kiểm tra ghế đã được đặt chưa
+    // Kiểm tra ghế đã được đặt và thanh toán thành công chưa
     $veXe = VeXe::where('MaGhe', $maGhe)
         ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+        ->whereHas('thanhToan', function($query) {
+            $query->where('TrangThai', 'Success');
+        })
         ->first();
     
     if ($veXe) {

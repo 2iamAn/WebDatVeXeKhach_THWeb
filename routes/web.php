@@ -148,6 +148,11 @@ Route::prefix('danhgia')->group(function () {
 Route::get('/lien-he', [ContactController::class, 'index'])->name('contact.index');
 Route::post('/lien-he', [ContactController::class, 'store'])->name('contact.store');
 
+// ======================== VỀ CHÚNG TÔI ===========================
+Route::get('/ve-chung-toi', function () {
+    return view('about');
+})->name('about.index');
+
 // ======================== TRANG CHỦ ===========================
 Route::get('/', function () {
     // Kiểm tra session và redirect theo role

@@ -642,14 +642,14 @@ function showSeatActions(soGhe, seatInfo) {
             </div>
             <div class="row">
                 <div class="col-md-4"><strong><i class="fas fa-ticket-alt me-1"></i>Mã vé:</strong></div>
-                <div class="col-md-8"><span class="badge bg-info">#${veInfo.maVe || '---'}</span></div>
+                <div class="col-md-8"><span class="badge bg-info">${veInfo.maVe || '---'}</span></div>
             </div>
         `;
         
         modalFooter = `
             <form method="POST" action="{{ url('/partner/seats/cancel-ticket') }}/${veInfo.maVe}" 
                   style="display: inline-block;" 
-                  onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé #${veInfo.maVe}? Hành động này sẽ cập nhật trạng thái vé và ghế.');">
+                  onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé ${veInfo.maVe}? Hành động này sẽ cập nhật trạng thái vé và ghế.');">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger">
                     <i class="fas fa-times-circle me-1"></i>Hủy vé

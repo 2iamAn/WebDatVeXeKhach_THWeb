@@ -56,7 +56,7 @@
                         <tbody>
                             @foreach($pendingPartners as $partner)
                                 <tr style="background-color: #fff3cd;">
-                                    <td><strong>#{{ $partner->MaNhaXe }}</strong></td>
+                                    <td><strong>{{ $partner->MaNhaXe }}</strong></td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center" 
@@ -66,16 +66,16 @@
                                             <strong>{{ $partner->TenNhaXe }}</strong>
                                         </div>
                                     </td>
-                                    <td>{{ $partner->HoTen }}</td>
+                                    <td>{{ $partner->nguoiDung ? $partner->nguoiDung->HoTen : '—' }}</td>
                                     <td>
                                         <div>
                                             <div class="mb-1">
                                                 <i class="fas fa-envelope text-primary me-1"></i>
-                                                <strong>Email:</strong> <code>{{ $partner->Email }}</code>
+                                                <strong>Email:</strong> <code>{{ $partner->nguoiDung ? $partner->nguoiDung->Email : '—' }}</code>
                                             </div>
                                             <div class="mb-1">
                                                 <i class="fas fa-user text-info me-1"></i>
-                                                <strong>Tên ĐN:</strong> <code>{{ $partner->TenDangNhap }}</code>
+                                                <strong>Tên ĐN:</strong> <code>{{ $partner->nguoiDung ? $partner->nguoiDung->TenDangNhap : '—' }}</code>
                                             </div>
                                             <div class="alert alert-info mb-0 py-1 px-2" style="font-size: 11px; margin-top: 4px;">
                                                 <i class="fas fa-info-circle me-1"></i>
@@ -83,7 +83,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ $partner->SDT }}</td>
+                                    <td>{{ $partner->nguoiDung ? $partner->nguoiDung->SDT : '—' }}</td>
                                     <td>{{ $partner->MoTa ? \Illuminate\Support\Str::limit($partner->MoTa, 50) : '—' }}</td>
                                     <td style="text-align: center;">
                                         <div class="d-flex justify-content-center gap-2">
@@ -98,39 +98,6 @@
                                                     data-bs-target="#rejectModal{{ $partner->MaNhaXe }}">
                                                 <i class="fas fa-times me-1"></i> Từ chối
                                             </button>
-
-                                            <!-- Modal Từ chối -->
-                                            <div class="modal fade" id="rejectModal{{ $partner->MaNhaXe }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ $partner->MaNhaXe }}" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <form action="{{ route('admin.partners.reject', $partner->MaNhaXe) }}" method="POST">
-                                                            @csrf
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="rejectModalLabel{{ $partner->MaNhaXe }}">Từ chối yêu cầu hợp tác #{{ $partner->MaNhaXe }}</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div class="mb-3">
-                                                                    <label for="LyDoTuChoi{{ $partner->MaNhaXe }}" class="form-label">
-                                                                        <strong>Lý do từ chối</strong> <span class="text-danger">*</span>
-                                                                    </label>
-                                                                    <textarea class="form-control" 
-                                                                              id="LyDoTuChoi{{ $partner->MaNhaXe }}" 
-                                                                              name="LyDoTuChoi" 
-                                                                              rows="4" 
-                                                                              required
-                                                                              placeholder="Nhập lý do từ chối yêu cầu hợp tác này..."></textarea>
-                                                                    <small class="text-muted">Lý do này sẽ được gửi đến nhà xe để họ biết và bổ sung thông tin.</small>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                                <button type="submit" class="btn btn-danger">Gửi từ chối</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -140,6 +107,41 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Từ chối - Đặt bên ngoài vòng lặp để tránh trùng lặp -->
+        @foreach($pendingPartners as $partner)
+        <div class="modal fade" id="rejectModal{{ $partner->MaNhaXe }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ $partner->MaNhaXe }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ route('admin.partners.reject', $partner->MaNhaXe) }}" method="POST">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="rejectModalLabel{{ $partner->MaNhaXe }}">Từ chối yêu cầu hợp tác #{{ $partner->MaNhaXe }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="LyDoTuChoi{{ $partner->MaNhaXe }}" class="form-label">
+                                    <strong>Lý do từ chối</strong> <span class="text-danger">*</span>
+                                </label>
+                                <textarea class="form-control" 
+                                          id="LyDoTuChoi{{ $partner->MaNhaXe }}" 
+                                          name="LyDoTuChoi" 
+                                          rows="4" 
+                                          required
+                                          placeholder="Nhập lý do từ chối yêu cầu hợp tác này..."></textarea>
+                                <small class="text-muted">Lý do này sẽ được gửi đến nhà xe để họ biết và bổ sung thông tin.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-danger">Gửi từ chối</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endforeach
     @else
         <div class="card-modern mb-4">
             <div class="card-body">
@@ -180,7 +182,7 @@
                         <tbody>
                             @foreach($approvedPartners as $partner)
                                 <tr>
-                                    <td><strong>#{{ $partner->MaNhaXe }}</strong></td>
+                                    <td><strong>{{ $partner->MaNhaXe }}</strong></td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center" 
@@ -190,20 +192,20 @@
                                             <strong>{{ $partner->TenNhaXe }}</strong>
                                         </div>
                                     </td>
-                                    <td>{{ $partner->HoTen }}</td>
+                                    <td>{{ $partner->nguoiDung ? $partner->nguoiDung->HoTen : '—' }}</td>
                                     <td>
                                         <div>
                                             <div class="mb-1">
                                                 <i class="fas fa-envelope text-primary me-1"></i>
-                                                <strong>Email:</strong> <code>{{ $partner->Email }}</code>
+                                                <strong>Email:</strong> <code>{{ $partner->nguoiDung ? $partner->nguoiDung->Email : '—' }}</code>
                                             </div>
                                             <div>
                                                 <i class="fas fa-user text-info me-1"></i>
-                                                <strong>Tên ĐN:</strong> <code>{{ $partner->TenDangNhap }}</code>
+                                                <strong>Tên ĐN:</strong> <code>{{ $partner->nguoiDung ? $partner->nguoiDung->TenDangNhap : '—' }}</code>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ $partner->SDT }}</td>
+                                    <td>{{ $partner->nguoiDung ? $partner->nguoiDung->SDT : '—' }}</td>
                                     <td>{{ $partner->MoTa ? \Illuminate\Support\Str::limit($partner->MoTa, 50) : '—' }}</td>
                                     <td>
                                         <span class="badge bg-success badge-custom">

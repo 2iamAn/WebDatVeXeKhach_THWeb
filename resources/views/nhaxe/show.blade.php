@@ -292,7 +292,7 @@
         <div class="col-md-8">
             <!-- Đánh giá -->
             <div class="rating-section">
-                <h2 class="rating-title">Dánh giá về nhà xe</h2>
+                <h2 class="rating-title">Đánh giá về nhà xe</h2>
                 
                 <div class="rating-score">
                     <span class="rating-number">{{ number_format($rating, 1) }}</span>

@@ -63,7 +63,7 @@
                         @foreach($chuyen->veXe as $ve)
                         <tr style="transition: all 0.3s;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='white'">
                             <td style="padding: 15px;">
-                                <strong class="text-primary">#{{ $ve->MaVe }}</strong>
+                                <strong class="text-primary">{{ $ve->MaVe }}</strong>
                             </td>
                             <td style="padding: 15px;">
                                 <i class="fas fa-user-circle text-info me-2"></i>

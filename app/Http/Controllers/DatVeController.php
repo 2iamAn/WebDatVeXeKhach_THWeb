@@ -21,13 +21,21 @@ class DatVeController extends Controller
         $chuyen = ChuyenXe::with(['nhaXe', 'tuyenDuong', 'ghe', 'xe'])->findOrFail($ma_chuyen);
         
         $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
+        // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
         $soGheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
             ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+            ->whereHas('thanhToan', function($query) {
+                $query->where('TrangThai', 'Success');
+            })
             ->count();
         $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         
+        // Chỉ lấy ghế đã đặt từ vé đã thanh toán thành công
         $gheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
             ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+            ->whereHas('thanhToan', function($query) {
+                $query->where('TrangThai', 'Success');
+            })
             ->pluck('MaGhe')
             ->map(fn($id) => (int)$id)
             ->toArray();
@@ -78,11 +86,13 @@ class DatVeController extends Controller
             ],
         ]);
 
-        $chuyen = ChuyenXe::with(['xe', 'ghe', 'veXe'])->findOrFail($validated['MaChuyenXe']);
+        $chuyen = ChuyenXe::with(['xe', 'ghe', 'veXe.thanhToan'])->findOrFail($validated['MaChuyenXe']);
         
         $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
+        // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
         $soGheDaDat = $chuyen->veXe->filter(fn($ve) => 
             !in_array(strtolower($ve->TrangThai ?? ''), array_map('strtolower', self::TRANG_THAI_HUY))
+            && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success'
         )->count();
         $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         
@@ -92,8 +102,12 @@ class DatVeController extends Controller
                 ->withInput();
         }
 
+        // Chỉ lấy ghế đã đặt từ vé đã thanh toán thành công
         $gheDaDat = VeXe::where('MaChuyenXe', $validated['MaChuyenXe'])
             ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+            ->whereHas('thanhToan', function($query) {
+                $query->where('TrangThai', 'Success');
+            })
             ->pluck('MaGhe')
             ->toArray();
         
@@ -110,8 +124,12 @@ class DatVeController extends Controller
 
         $veXeList = [];
         foreach ($validated['MaGhe'] as $maGhe) {
+            // Kiểm tra ghế đã được đặt và thanh toán thành công
             if (VeXe::where('MaGhe', $maGhe)
                 ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+                ->whereHas('thanhToan', function($query) {
+                    $query->where('TrangThai', 'Success');
+                })
                 ->exists()) {
                 continue;
             }

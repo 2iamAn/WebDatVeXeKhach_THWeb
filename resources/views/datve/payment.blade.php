@@ -49,10 +49,10 @@
                                     <span class="badge bg-primary" style="font-size: 1rem; padding: 6px 12px;">
                                         @if(isset($tatCaVe) && $tatCaVe->count() > 0)
                                             @foreach($tatCaVe as $ve)
-                                                #{{ $ve->MaVe }}@if(!$loop->last), @endif
+                                                {{ $ve->MaVe }}@if(!$loop->last), @endif
                                             @endforeach
                                         @else
-                                            #{{ $veXe->MaVe }}
+                                            {{ $veXe->MaVe }}
                                         @endif
                                     </span>
                                 </p>
@@ -60,6 +60,7 @@
                                 <p><strong>Nhà xe:</strong> {{ $veXe->chuyenXe->nhaXe->TenNhaXe ?? '---' }}</p>
                                 <p><strong>Điểm đi:</strong> {{ $veXe->chuyenXe->tuyenDuong->DiemDi ?? '---' }}</p>
                                 <p><strong>Điểm đến:</strong> {{ $veXe->chuyenXe->tuyenDuong->DiemDen ?? '---' }}</p>
+                                <p><strong>Số điện thoại:</strong> {{ $veXe->nguoiDung->SDT ?? ($user->SDT ?? '---') }}</p>
                             </div>
                             <div class="col-md-6">
                                 <p><strong>Ghế đã đặt:</strong> 

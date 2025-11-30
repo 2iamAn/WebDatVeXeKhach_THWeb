@@ -30,8 +30,12 @@ class VeXeController extends Controller
     {
         if (session('user') && session('role') === 'user') {
             $user = session('user');
+            // Chỉ hiển thị vé đã thanh toán thành công
             $ves = VeXe::with(['chuyenXe.tuyenDuong', 'chuyenXe.nhaXe', 'nguoiDung', 'thanhToan', 'ghe'])
                 ->where('MaNguoiDung', $user->MaNguoiDung)
+                ->whereHas('thanhToan', function($query) {
+                    $query->where('TrangThai', 'Success');
+                })
                 ->orderByDesc('MaVe')
                 ->get();
             return view('vexe.index', compact('ves'));
