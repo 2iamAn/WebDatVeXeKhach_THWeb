@@ -16,22 +16,30 @@
                 <i class="fas fa-couch me-2 text-primary"></i>
                 Sơ đồ ghế ngồi
             </h5>
-            <div id="seatStats">
-                <span class="badge bg-success me-2" style="font-size: 14px; padding: 8px 15px;">
+            <div id="seatStats" class="d-flex flex-wrap gap-2">
+                <span class="badge bg-success" style="font-size: 13px; padding: 8px 14px; border-radius: 10px;">
                     <i class="fas fa-check-circle me-1"></i>
-                    Trống: <span id="trongCount">{{ ($tongGhe34 ?? 0) - ($soGheDaDat34 ?? 0) }}</span>
+                    Trống: <strong id="trongCount">{{ ($tongGhe34 ?? 0) - ($soGheDaDat34 ?? 0) }}</strong>
                 </span>
-                <span class="badge bg-warning me-2" style="font-size: 14px; padding: 8px 15px;">
+                <span class="badge bg-primary" style="font-size: 13px; padding: 8px 14px; border-radius: 10px;">
+                    <i class="fas fa-globe me-1"></i>
+                    Đặt online: <strong id="onlineCount">0</strong>
+                </span>
+                <span class="badge" style="font-size: 13px; padding: 8px 14px; border-radius: 10px; background: #f57c00; color: white;">
+                    <i class="fas fa-store me-1"></i>
+                    Bán tại quầy: <strong id="counterCount">0</strong>
+                </span>
+                <span class="badge" style="font-size: 13px; padding: 8px 14px; border-radius: 10px; background: #7b1fa2; color: white;">
+                    <i class="fas fa-check-double me-1"></i>
+                    Đã lên xe: <strong id="confirmedCount">0</strong>
+                </span>
+                <span class="badge bg-warning text-dark" style="font-size: 13px; padding: 8px 14px; border-radius: 10px;">
                     <i class="fas fa-lock me-1"></i>
-                    Khóa: <span id="khoaCount">0</span>
+                    Giữ chỗ: <strong id="khoaCount">0</strong>
                 </span>
-                <span class="badge bg-danger me-2" style="font-size: 14px; padding: 8px 15px;">
-                    <i class="fas fa-times-circle me-1"></i>
-                    Đã đặt: <span id="daDatCount">{{ $soGheDaDat34 ?? 0 }}</span>
-                </span>
-                <span class="badge bg-info" style="font-size: 14px; padding: 8px 15px;">
+                <span class="badge bg-info" style="font-size: 13px; padding: 8px 14px; border-radius: 10px;">
                     <i class="fas fa-couch me-1"></i>
-                    Tổng: <span id="totalCount">{{ $tongGhe34 ?? 0 }}</span>
+                    Tổng: <strong id="totalCount">{{ $tongGhe34 ?? 0 }}</strong>
                 </span>
             </div>
         </div>
@@ -218,25 +226,61 @@
         <div class="mt-4 pt-4 border-top">
             <h6 class="mb-3">
                 <i class="fas fa-info-circle me-2 text-info"></i>
-                Chú thích:
+                Chú thích trạng thái ghế:
             </h6>
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="rounded me-3 seat-legend seat-empty" style="width: 40px; height: 40px;"></div>
-                        <span><strong>Ghế trống</strong> - Có thể đặt vé</span>
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-empty"></div>
+                        <div class="legend-text">
+                            <strong>Ghế trống</strong>
+                            <small>Có thể đặt vé</small>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="rounded me-3 seat-legend seat-locked" style="width: 40px; height: 40px; background: #ffc107; border: 2px solid #ff9800;"></div>
-                        <span><strong>Ghế khóa</strong> - Đang giữ chỗ</span>
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-booked-online"></div>
+                        <div class="legend-text">
+                            <strong>Đặt online</strong>
+                            <small>Khách đặt qua web</small>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <div class="rounded me-3 seat-legend seat-booked" style="width: 40px; height: 40px;"></div>
-                        <span><strong>Ghế đã đặt</strong> - Đã có khách hàng</span>
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-booked-counter"></div>
+                        <div class="legend-text">
+                            <strong>Bán tại quầy</strong>
+                            <small>Nhà xe bán trực tiếp</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-confirmed"></div>
+                        <div class="legend-text">
+                            <strong>Đã lên xe</strong>
+                            <small>Đã xác nhận</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-locked"></div>
+                        <div class="legend-text">
+                            <strong>Giữ chỗ</strong>
+                            <small>Đang tạm giữ</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="legend-item">
+                        <div class="seat-legend seat-cancelled"></div>
+                        <div class="legend-text">
+                            <strong>Đã hủy</strong>
+                            <small>Vé bị hủy</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -254,122 +298,225 @@
 }
 
 .floor-container {
-    background: #f8f9fa;
-    border-radius: 15px;
-    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 20px;
+    padding: 30px;
     min-width: 500px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    border: 2px solid rgba(0, 184, 148, 0.1);
 }
 
 .floor-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 20px;
+    color: #00b894;
+    margin-bottom: 25px;
     text-align: center;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0, 184, 148, 0.1) 0%, rgba(0, 206, 201, 0.1) 100%);
+    border-radius: 12px;
+    border: 2px solid rgba(0, 184, 148, 0.2);
 }
 
 .seat-grid {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 15px;
 }
 
 .seat-item {
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 2px solid transparent;
     position: relative;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .seat-item:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: scale(1.15) translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
     z-index: 10;
 }
 
+/* Ghế trống */
 .seat-empty {
-    background: #e0e0e0;
-    color: #495057;
-    border: 2px solid #28a745;
-}
-
-.seat-booked {
-    background: #dc3545 !important;
-    color: white !important;
-    border-color: #c82333 !important;
-    font-weight: 700 !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-}
-
-.seat-booked:hover {
-    background: #c82333 !important;
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-.seat-locked {
-    background: #ffc107 !important;
-    color: #000 !important;
-    border-color: #ff9800 !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
-}
-
-.seat-locked:hover {
-    background: #ff9800 !important;
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    border-color: #66bb6a;
 }
 
 .seat-empty:hover {
-    background: #d0d0d0;
+    background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+    border-color: #4caf50;
+}
+
+/* Đã đặt online */
+.seat-booked-online {
+    background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+    color: #0d47a1;
+    border-color: #1976d2;
+}
+
+.seat-booked-online:hover {
+    background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
+}
+
+/* Bán trực tiếp tại quầy */
+.seat-booked-counter {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffcc80 100%);
+    color: #e65100;
+    border-color: #f57c00;
+}
+
+.seat-booked-counter:hover {
+    background: linear-gradient(135deg, #ffcc80 0%, #ffb74d 100%);
+    box-shadow: 0 8px 20px rgba(245, 124, 0, 0.4);
+}
+
+/* Đã xác nhận lên xe */
+.seat-confirmed {
+    background: linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%);
+    color: #4a148c;
+    border-color: #7b1fa2;
+}
+
+.seat-confirmed:hover {
+    background: linear-gradient(135deg, #ce93d8 0%, #ba68c8 100%);
+    box-shadow: 0 8px 20px rgba(123, 31, 162, 0.4);
+}
+
+/* Ghế khóa/giữ chỗ */
+.seat-locked {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff176 100%);
+    color: #f57f17;
+    border-color: #fbc02d;
+}
+
+.seat-locked:hover {
+    background: linear-gradient(135deg, #fff176 0%, #ffeb3b 100%);
+    box-shadow: 0 8px 20px rgba(251, 192, 45, 0.4);
+}
+
+/* Đã hủy */
+.seat-cancelled {
+    background: linear-gradient(135deg, #ffebee 0%, #ef9a9a 100%);
+    color: #b71c1c;
+    border-color: #e53935;
+    opacity: 0.7;
+}
+
+.seat-cancelled:hover {
+    opacity: 1;
+    box-shadow: 0 8px 20px rgba(229, 57, 53, 0.3);
+}
+
+/* Legacy - Ghế đã đặt (tổng quát) */
+.seat-booked {
+    background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);
+    color: #0d47a1;
+    border-color: #1976d2;
+}
+
+.seat-booked:hover {
+    background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
+    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
 }
 
 .driver-seat {
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #6c757d;
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
     color: white;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    font-size: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 22px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .seat-row {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: center;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .aisle {
-    width: 30px;
+    width: 35px;
+}
+
+/* Legend styles */
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.legend-item:hover {
+    border-color: #00b894;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.15);
+}
+
+.seat-legend {
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    border: 2px solid;
+}
+
+.legend-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.legend-text strong {
+    font-size: 14px;
+    color: #1a202c;
+}
+
+.legend-text small {
+    font-size: 11px;
+    color: #6c757d;
 }
 
 @media (max-width: 768px) {
     .floor-container {
         min-width: 100%;
+        padding: 20px;
     }
     .seat-item {
-        width: 40px;
-        height: 40px;
-        font-size: 10px;
+        width: 45px;
+        height: 45px;
+        font-size: 11px;
+    }
+    .driver-seat {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+    }
+    .aisle {
+        width: 25px;
     }
 }
 </style>
@@ -594,6 +741,9 @@ function showSeatActions(soGhe, seatInfo) {
     // Debug log
     console.log('showSeatActions - soGhe:', soGhe);
     console.log('showSeatActions - seatInfo:', seatInfo);
+    console.log('showSeatActions - isEmpty:', isEmpty);
+    console.log('showSeatActions - isLocked:', isLocked);
+    console.log('showSeatActions - maGhe:', maGhe);
     console.log('showSeatActions - veInfo:', veInfo);
     
     let modalHeaderClass = 'bg-secondary';
@@ -601,66 +751,8 @@ function showSeatActions(soGhe, seatInfo) {
     let modalBody = '';
     let modalFooter = '';
     
-    if (!isEmpty && veInfo) {
-        // Ghế đã đặt - hiển thị thông tin khách hàng và các thao tác
-        modalHeaderClass = 'bg-danger text-white';
-        modalTitle = `<i class="fas fa-user-check me-2"></i>Ghế ${soGhe} - Đã đặt`;
-        
-        modalBody = `
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Trạng thái:</strong> <span class="badge bg-danger">Đã đặt</span>
-            </div>
-            <h6 class="mb-3"><i class="fas fa-user me-2"></i>Thông tin khách hàng:</h6>
-            <div class="row mb-3">
-                <div class="col-md-4"><strong><i class="fas fa-user me-1"></i>Tên khách:</strong></div>
-                <div class="col-md-8">${veInfo.hoTen || '---'}</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-4"><strong><i class="fas fa-phone me-1"></i>SĐT khách:</strong></div>
-                <div class="col-md-8">${veInfo.sdt || '---'}</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-4"><strong><i class="fas fa-info-circle me-1"></i>Trạng thái vé:</strong></div>
-                <div class="col-md-8">
-                    <span class="badge bg-${veInfo.trangThai === 'Đã thanh toán' || veInfo.trangThai === 'da_dat' ? 'success' : 'warning'}">
-                        ${veInfo.trangThai || '---'}
-                    </span>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-4"><strong><i class="fas fa-credit-card me-1"></i>Phương thức thanh toán:</strong></div>
-                <div class="col-md-8">
-                    <span class="badge bg-${veInfo.phuongThuc && veInfo.phuongThuc !== 'Chưa thanh toán' ? 'primary' : 'secondary'}">
-                        ${veInfo.phuongThuc || 'Chưa thanh toán'}
-                    </span>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-4"><strong><i class="fas fa-calendar me-1"></i>Ngày đặt:</strong></div>
-                <div class="col-md-8">${veInfo.ngayDat || '---'}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-4"><strong><i class="fas fa-ticket-alt me-1"></i>Mã vé:</strong></div>
-                <div class="col-md-8"><span class="badge bg-info">${veInfo.maVe || '---'}</span></div>
-            </div>
-        `;
-        
-        modalFooter = `
-            <form method="POST" action="{{ url('/partner/seats/cancel-ticket') }}/${veInfo.maVe}" 
-                  style="display: inline-block;" 
-                  onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé ${veInfo.maVe}? Hành động này sẽ cập nhật trạng thái vé và ghế.');">
-                <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-times-circle me-1"></i>Hủy vé
-                </button>
-            </form>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                <i class="fas fa-times me-1"></i>Đóng
-            </button>
-        `;
-    } else if (isLocked && maGhe) {
-        // Ghế đã khóa - hiển thị thông tin và nút mở khóa
+    if (isLocked && maGhe) {
+        // Ghế đã khóa - hiển thị thông tin và nút mở khóa (ưu tiên check trước)
         modalHeaderClass = 'bg-warning text-dark';
         modalTitle = `<i class="fas fa-lock me-2"></i>Ghế ${soGhe} - Đã khóa`;
         
@@ -685,28 +777,108 @@ function showSeatActions(soGhe, seatInfo) {
                 <i class="fas fa-times me-1"></i>Đóng
             </button>
         `;
-    } else if (isEmpty && maGhe) {
-        // Ghế trống - hiển thị thông tin và nút khóa
-        modalHeaderClass = 'bg-success text-white';
-        modalTitle = `<i class="fas fa-check-circle me-2"></i>Ghế ${soGhe} - Trống`;
+    } else if (!isEmpty && veInfo) {
+        // Ghế đã đặt - hiển thị thông tin khách hàng và các thao tác
+        modalHeaderClass = 'bg-primary text-white';
+        modalTitle = `<i class="fas fa-user-check me-2"></i>Ghế ${soGhe} - Thông tin vé`;
         
         modalBody = `
-            <div class="alert alert-success">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Trạng thái:</strong> <span class="badge bg-success">Trống</span>
+            <div class="card border-0 mb-3" style="background: linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%);">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><i class="fas fa-user me-2 text-primary"></i>Thông tin khách hàng</h6>
+                        <span class="badge ${veInfo.trangThai === 'Đã thanh toán' || veInfo.trangThai === 'da_dat' ? 'bg-success' : 'bg-warning'}">
+                            ${veInfo.trangThai || 'Chưa thanh toán'}
+                        </span>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <div class="info-row">
+                                <i class="fas fa-user text-primary"></i>
+                                <strong>Tên khách:</strong>
+                                <span>${veInfo.hoTen || '---'}</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-row">
+                                <i class="fas fa-phone text-success"></i>
+                                <strong>Số điện thoại:</strong>
+                                <span>${veInfo.sdt || '---'}</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-row">
+                                <i class="fas fa-ticket-alt text-info"></i>
+                                <strong>Mã vé:</strong>
+                                <span class="badge bg-info">${veInfo.maVe || '---'}</span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-row">
+                                <i class="fas fa-credit-card text-warning"></i>
+                                <strong>Thanh toán:</strong>
+                                <span class="badge ${veInfo.phuongThuc && veInfo.phuongThuc !== 'Chưa thanh toán' ? 'bg-primary' : 'bg-secondary'}">
+                                    ${veInfo.phuongThuc || 'Chưa thanh toán'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="info-row">
+                                <i class="fas fa-calendar text-danger"></i>
+                                <strong>Ngày đặt:</strong>
+                                <span>${veInfo.ngayDat || '---'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <p class="mb-0">Ghế này đang trống và có thể đặt vé. Bạn có thể khóa ghế để giữ chỗ.</p>
         `;
         
         modalFooter = `
-            <form method="POST" action="{{ url('/partner/seats/lock') }}/${maGhe}" 
-                  style="display: inline-block;" 
-                  onsubmit="return lockSeatAjax(event, ${maGhe});">
-                <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-secondary">
-                    <i class="fas fa-lock me-1"></i>Khóa ghế
+            <button type="button" class="btn btn-success" onclick="confirmBoarding('${veInfo.maVe}', '${soGhe}')">
+                <i class="fas fa-check-circle me-1"></i>Xác nhận lên xe
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                <i class="fas fa-arrow-left me-1"></i>Đóng
+            </button>
+        `;
+    } else if (isEmpty) {
+        // Ghế trống - hiển thị tùy chọn bán vé hoặc giữ chỗ
+        modalHeaderClass = 'bg-success text-white';
+        modalTitle = `<i class="fas fa-couch me-2"></i>Ghế ${soGhe} - Ghế trống`;
+        
+        modalBody = `
+            <div class="alert alert-success mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Trạng thái:</strong> <span class="badge bg-success">Ghế trống</span>
+            </div>
+            <p class="text-muted mb-3">Ghế này đang trống. Vui lòng chọn thao tác:</p>
+            <div class="d-grid gap-3">
+                <button class="btn btn-lg btn-primary d-flex align-items-center justify-content-between" onclick="sellTicketDirect('${soGhe}', ${maGhe || 'null'})">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fas fa-ticket-alt" style="font-size: 24px;"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Bán vé trực tiếp tại quầy</div>
+                            <small style="opacity: 0.9;">Nhập thông tin khách và bán vé ngay</small>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
                 </button>
-            </form>
+                ${maGhe ? `
+                <button class="btn btn-lg btn-warning d-flex align-items-center justify-content-between" onclick="lockSeatFromModal(${maGhe})">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="fas fa-lock" style="font-size: 24px;"></i>
+                        <div class="text-start">
+                            <div class="fw-bold">Giữ chỗ tạm thời</div>
+                            <small style="opacity: 0.9;">Khóa ghế để dành cho khách</small>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right"></i>
+                </button>` : ''}
+            </div>
+        `;
+        
+        modalFooter = `
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                 <i class="fas fa-times me-1"></i>Đóng
             </button>
@@ -767,6 +939,45 @@ function showSeatInfo(soGhe, veInfo) {
     const seatInfo = getSeatStatus(soGhe);
     seatInfo.veInfo = veInfo;
     showSeatActions(soGhe, seatInfo);
+}
+
+// Hàm khóa ghế từ modal
+function lockSeatFromModal(maGhe) {
+    // Đóng modal hiện tại
+    const currentModal = bootstrap.Modal.getInstance(document.getElementById('seatActionsModal'));
+    if (currentModal) {
+        currentModal.hide();
+    }
+    
+    if (!confirm('Bạn có chắc chắn muốn giữ chỗ ghế này?')) {
+        return false;
+    }
+    
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    
+    fetch(`{{ url('/partner/seats/lock') }}/${maGhe}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Giữ chỗ thành công!');
+            location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi giữ chỗ!');
+    });
+    
+    return false;
 }
 
 // Hàm khóa ghế bằng AJAX
@@ -841,54 +1052,59 @@ function unlockSeatAjax(event, maGhe) {
     return false;
 }
 
-// Hàm helper để render một ghế
+// Hàm helper để render một ghế với màu sắc theo trạng thái
 function renderSeat(soGhe) {
     const seatInfo = getSeatStatus(soGhe);
     let seatClass = 'seat-empty';
+    let icon = '';
+    let title = '';
+    
+    // Xác định class CSS và icon dựa trên trạng thái chi tiết
     if (seatInfo.isLocked) {
         seatClass = 'seat-locked';
-    } else if (!seatInfo.isEmpty) {
-        seatClass = 'seat-booked';
+        icon = '<i class="fas fa-lock" style="font-size: 10px;"></i>';
+        title = `Ghế ${soGhe} - Giữ chỗ`;
+    } else if (!seatInfo.isEmpty && seatInfo.veInfo) {
+        const veInfo = seatInfo.veInfo;
+        const trangThai = veInfo.trangThai || '';
+        const phuongThuc = veInfo.phuongThuc || '';
+        
+        // Phân loại theo trạng thái vé
+        if (trangThai.includes('Đã sử dụng') || trangThai.includes('Da su dung')) {
+            // Đã xác nhận lên xe
+            seatClass = 'seat-confirmed';
+            icon = '<i class="fas fa-check-double" style="font-size: 10px;"></i>';
+            title = `Ghế ${soGhe} - Đã lên xe - ${veInfo.hoTen}`;
+        } else if (trangThai.includes('Hủy') || trangThai.includes('Huy')) {
+            // Vé đã hủy
+            seatClass = 'seat-cancelled';
+            icon = '<i class="fas fa-ban" style="font-size: 10px;"></i>';
+            title = `Ghế ${soGhe} - Đã hủy`;
+        } else if (phuongThuc.includes('Tiền mặt') || phuongThuc.includes('Tien mat') || phuongThuc.includes('Bán trực tiếp')) {
+            // Bán trực tiếp tại quầy
+            seatClass = 'seat-booked-counter';
+            icon = '<i class="fas fa-store" style="font-size: 10px;"></i>';
+            title = `Ghế ${soGhe} - Bán tại quầy - ${veInfo.hoTen} - ${veInfo.sdt}`;
+        } else {
+            // Đặt online
+            seatClass = 'seat-booked-online';
+            icon = '<i class="fas fa-globe" style="font-size: 10px;"></i>';
+            title = `Ghế ${soGhe} - Đặt online - ${veInfo.hoTen} - ${veInfo.sdt}`;
+        }
+    } else {
+        title = `Ghế ${soGhe} - Trống - Click để đặt vé hoặc giữ chỗ`;
     }
-    const displayName = soGhe.replace(/T[12]/i, '');
     
-    // Tất cả ghế đều có thể click để xem thông tin và thao tác
-    // Escape JSON để truyền vào onclick
+    const displayName = soGhe.replace(/T[12]/i, '');
     const seatInfoJson = JSON.stringify(seatInfo).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     
-    if (!seatInfo.isEmpty && seatInfo.veInfo) {
-        // Ghế đã đặt
-        return `<div class="seat-item ${seatClass}" 
-                     title="Ghế ${soGhe} - Đã đặt - Click để xem thông tin và thao tác"
-                     onclick="showSeatActions('${soGhe}', '${seatInfoJson.replace(/'/g, "\\'")}')"
-                     style="cursor: pointer !important;">
-                     ${displayName}
-                 </div>`;
-    } else if (seatInfo.isLocked && seatInfo.maGhe) {
-        // Ghế khóa
-        return `<div class="seat-item ${seatClass}" 
-                     title="Ghế ${soGhe} - Đã khóa - Click để mở khóa"
-                     onclick="showSeatActions('${soGhe}', '${seatInfoJson.replace(/'/g, "\\'")}')"
-                     style="cursor: pointer !important;">
-                     <i class="fas fa-lock"></i> ${displayName}
-                 </div>`;
-    } else if (seatInfo.isEmpty && seatInfo.maGhe) {
-        // Ghế trống
-        return `<div class="seat-item ${seatClass}" 
-                     title="Ghế ${soGhe} - Trống - Click để khóa"
-                     onclick="showSeatActions('${soGhe}', '${seatInfoJson.replace(/'/g, "\\'")}')"
-                     style="cursor: pointer !important;">
-                     ${displayName}
-                 </div>`;
-    } else {
-        // Trường hợp khác
-        return `<div class="seat-item ${seatClass}" 
-                     title="Ghế ${soGhe} - ${seatInfo.status} - Click để xem thông tin"
-                     onclick="showSeatActions('${soGhe}', '${seatInfoJson.replace(/'/g, "\\'")}')"
-                     style="cursor: pointer !important;">
-                     ${displayName}
-                 </div>`;
-    }
+    return `<div class="seat-item ${seatClass}" 
+                 title="${title}"
+                 onclick="showSeatActions('${soGhe}', '${seatInfoJson.replace(/'/g, "\\'")}')"
+                 style="cursor: pointer !important;">
+                 <div style="font-size: 13px; font-weight: 700;">${displayName}</div>
+                 ${icon}
+             </div>`;
 }
 
 // Hàm hiển thị options cho ghế trống
@@ -1005,20 +1221,35 @@ function renderSeatMap(type) {
 function updateStats(type) {
     const layout = seatLayouts[type];
     let trong = 0;
-    let daDat = 0;
+    let online = 0;
+    let counter = 0;
+    let confirmed = 0;
     let khoa = 0;
+    let total = 0;
     
     [...layout.floor1, ...layout.floor2].forEach(row => {
         row.forEach(column => {
             if (Array.isArray(column) && column.length > 0) {
                 column.forEach(soGhe => {
                     const seatInfo = getSeatStatus(soGhe);
+                    total++;
+                    
                     if (seatInfo.isLocked) {
                         khoa++;
                     } else if (seatInfo.isEmpty) {
                         trong++;
-                    } else {
-                        daDat++;
+                    } else if (seatInfo.veInfo) {
+                        const veInfo = seatInfo.veInfo;
+                        const trangThai = veInfo.trangThai || '';
+                        const phuongThuc = veInfo.phuongThuc || '';
+                        
+                        if (trangThai.includes('Đã sử dụng') || trangThai.includes('Da su dung')) {
+                            confirmed++;
+                        } else if (phuongThuc.includes('Tiền mặt') || phuongThuc.includes('Tien mat') || phuongThuc.includes('Bán trực tiếp')) {
+                            counter++;
+                        } else {
+                            online++;
+                        }
                     }
                 });
             }
@@ -1026,8 +1257,11 @@ function updateStats(type) {
     });
     
     document.getElementById('trongCount').textContent = trong;
-    document.getElementById('daDatCount').textContent = daDat;
+    document.getElementById('onlineCount').textContent = online;
+    document.getElementById('counterCount').textContent = counter;
+    document.getElementById('confirmedCount').textContent = confirmed;
     document.getElementById('khoaCount').textContent = khoa;
+    document.getElementById('totalCount').textContent = total;
 }
 
 // Dữ liệu chuyến xe từ server
@@ -1092,6 +1326,155 @@ function updateStatsBySeatType(type) {
     document.getElementById('totalCount').textContent = totalSeats;
 }
 
+// Hàm xác nhận khách đã lên xe
+function confirmBoarding(maVe, soGhe) {
+    if (!confirm(`Xác nhận khách hàng ghế ${soGhe} đã lên xe?`)) {
+        return;
+    }
+    
+    // Gọi API để cập nhật trạng thái
+    fetch(`{{ url('/partner/seats/confirm-boarding') }}/${maVe}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ maVe: maVe, soGhe: soGhe })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'Có lỗi xảy ra!');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('Đã xác nhận khách lên xe!');
+            location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Có lỗi xảy ra khi xác nhận!');
+    });
+}
+
+// Hàm bán vé trực tiếp tại quầy
+function sellTicketDirect(soGhe, maGhe) {
+    // Đóng modal hiện tại
+    const currentModal = bootstrap.Modal.getInstance(document.getElementById('seatActionsModal'));
+    if (currentModal) {
+        currentModal.hide();
+    }
+    
+    // Tạo modal nhập thông tin khách
+    const sellModalContent = `
+        <div class="modal fade" id="sellDirectModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-ticket-alt me-2"></i>Bán vé trực tiếp - Ghế ${soGhe}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="sellDirectForm" onsubmit="return submitSellDirect(event, '${soGhe}', ${maGhe})">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-user me-1"></i>Họ và tên khách hàng *
+                                </label>
+                                <input type="text" class="form-control" name="hoTen" required placeholder="Nhập họ tên khách hàng">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-phone me-1"></i>Số điện thoại *
+                                </label>
+                                <input type="tel" class="form-control" name="sdt" required placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="fas fa-money-bill me-1"></i>Giá vé
+                                </label>
+                                <input type="number" class="form-control" name="giaVe" value="{{ $selectedChuyen->GiaVe ?? 0 }}" readonly>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Vé sẽ được tạo với trạng thái <strong>"Bán trực tiếp"</strong>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Xác nhận bán vé
+                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-1"></i>Hủy
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Xóa modal cũ nếu có
+    const oldSellModal = document.getElementById('sellDirectModal');
+    if (oldSellModal) {
+        oldSellModal.remove();
+    }
+    
+    // Thêm modal mới
+    document.body.insertAdjacentHTML('beforeend', sellModalContent);
+    const sellModal = new bootstrap.Modal(document.getElementById('sellDirectModal'));
+    sellModal.show();
+    
+    // Xóa modal khi đóng
+    document.getElementById('sellDirectModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+    });
+}
+
+// Hàm submit bán vé trực tiếp
+function submitSellDirect(event, soGhe, maGhe) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Thêm thông tin ghế và chuyến
+    formData.append('soGhe', soGhe);
+    formData.append('maGhe', maGhe);
+    formData.append('maChuyenXe', '{{ $selectedChuyen->MaChuyenXe ?? "" }}');
+    
+    fetch('{{ url("/partner/seats/sell-direct") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Bán vé thành công!');
+            location.reload();
+        } else {
+            alert(data.message || 'Có lỗi xảy ra!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi bán vé!');
+    });
+    
+    return false;
+}
+
 // Khởi tạo với loại xe mặc định
 document.addEventListener('DOMContentLoaded', function() {
     renderSeatMap('34');
@@ -1101,6 +1484,106 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Info row trong modal */
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(0, 184, 148, 0.03);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(0, 184, 148, 0.1);
+    transition: all 0.3s ease;
+}
+
+.info-row:hover {
+    background: rgba(0, 184, 148, 0.08);
+    border-color: rgba(0, 184, 148, 0.2);
+    transform: translateX(5px);
+}
+
+.info-row i {
+    font-size: 18px;
+    width: 24px;
+}
+
+.info-row strong {
+    min-width: 120px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.info-row span {
+    color: #212529;
+    font-weight: 500;
+}
+
+/* Modal custom styles */
+.modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    padding: 18px 24px;
+    border-bottom: none;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+}
+
+/* List group trong modal */
+.list-group-item {
+    border: 1px solid rgba(0, 184, 148, 0.1);
+    border-radius: 10px !important;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    padding: 15px;
+}
+
+.list-group-item:hover {
+    background: rgba(0, 184, 148, 0.05);
+    border-color: rgba(0, 184, 148, 0.2);
+    transform: translateX(5px);
+}
+
+/* Button lớn trong modal ghế trống */
+.modal-body .btn-lg {
+    padding: 18px 24px;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-body .btn-lg:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+}
+
+.modal-body .btn-lg .text-start {
+    line-height: 1.3;
+}
+
+.modal-body .btn-lg small {
+    font-size: 0.85rem;
+}
+
+.modal-body .d-grid {
+    margin-top: 10px;
+}
+
+/* Calendar styles */
 .calendar-container {
     max-width: 100%;
 }

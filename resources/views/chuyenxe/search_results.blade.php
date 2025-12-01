@@ -905,12 +905,6 @@
                                                 @endif
                                             </div>
                                         @endif
-                                        
-                                        @if($chuyen->nhaXe)
-                                            <a href="{{ route('nhaxe.show', $chuyen->nhaXe->MaNhaXe) }}" class="btn btn-sm btn-outline-primary mt-3">
-                                                <i class="fas fa-info-circle me-1"></i> Xem chi tiết nhà xe
-                                            </a>
-                                        @endif
                                     </div>
                                 </div>
                                 
@@ -928,40 +922,100 @@
                                                     {{ $chuyen->nhaXe->total_reviews }} đánh giá
                                                 </div>
                                             </div>
-                                        @endif
-                                        
-                                        @if($chuyen->nhaXe && $chuyen->nhaXe->recent_reviews && count($chuyen->nhaXe->recent_reviews) > 0)
-                                            @foreach($chuyen->nhaXe->recent_reviews as $review)
-                                                <div style="border-bottom: 1px solid #eee; padding: 15px 0; margin-bottom: 10px;">
-                                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                                                        <div style="width: 40px; height: 40px; border-radius: 50%; background: #{{ ['e74c3c', '3498db', '2ecc71', 'f39c12', '9b59b6'][rand(0,4)] }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
-                                                            {{ strtoupper(substr($review->HoTen ?? 'K', 0, 1)) }}
+                                            
+                                            @if($chuyen->nhaXe->recent_reviews && count($chuyen->nhaXe->recent_reviews) > 0)
+                                                @php
+                                                    $reviews = collect($chuyen->nhaXe->recent_reviews);
+                                                    $firstThree = $reviews->take(3);
+                                                    $remaining = $reviews->skip(3);
+                                                    $hasMore = $chuyen->nhaXe->total_reviews > 3;
+                                                @endphp
+                                                
+                                                @foreach($firstThree as $review)
+                                                    <div class="review-item" style="border-bottom: 1px solid #eee; padding: 15px 0; margin-bottom: 10px;">
+                                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #{{ ['e74c3c', '3498db', '2ecc71', 'f39c12', '9b59b6'][rand(0,4)] }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                                                                {{ strtoupper(substr($review->HoTen ?? 'K', 0, 1)) }}
+                                                            </div>
+                                                            <div style="flex: 1;">
+                                                                <div style="font-weight: 600;">{{ $review->HoTen ?? 'Khách hàng' }}</div>
+                                                                <div style="font-size: 12px; color: #999;">{{ \Carbon\Carbon::parse($review->NgayDanhGia)->format('d/m/Y') }}</div>
+                                                            </div>
+                                                            <div style="color: #f39c12; font-size: 14px;">
+                                                                @for($i = 1; $i <= 5; $i++)
+                                                                    @if($i <= $review->SoSao)
+                                                                        <i class="fas fa-star"></i>
+                                                                    @else
+                                                                        <i class="far fa-star"></i>
+                                                                    @endif
+                                                                @endfor
+                                                                <span style="margin-left: 5px;">{{ $review->SoSao }}/5</span>
+                                                            </div>
                                                         </div>
-                                                        <div style="flex: 1;">
-                                                            <div style="font-weight: 600;">{{ $review->HoTen ?? 'Khách hàng' }}</div>
-                                                            <div style="font-size: 12px; color: #999;">{{ \Carbon\Carbon::parse($review->NgayDanhGia)->format('d/m/Y') }}</div>
-                                                        </div>
-                                                        <div style="color: #f39c12; font-size: 14px;">
-                                                            @for($i = 1; $i <= 5; $i++)
-                                                                @if($i <= $review->SoSao)
-                                                                    <i class="fas fa-star"></i>
-                                                                @else
-                                                                    <i class="far fa-star"></i>
-                                                                @endif
-                                                            @endfor
-                                                            <span style="margin-left: 5px;">{{ $review->SoSao }}/5</span>
-                                                        </div>
+                                                        @if($review->NoiDung)
+                                                            <p style="color: #555; font-size: 14px; margin: 0; line-height: 1.6;">{{ $review->NoiDung }}</p>
+                                                        @endif
                                                     </div>
-                                                    @if($review->NoiDung)
-                                                        <p style="color: #555; font-size: 14px; margin: 0; line-height: 1.6;">{{ $review->NoiDung }}</p>
-                                                    @endif
+                                                @endforeach
+                                                
+                                                @if($remaining->count() > 0)
+                                                    <div class="reviews-remaining-{{ $chuyen->MaChuyenXe }}" style="display: none;">
+                                                        @foreach($remaining as $review)
+                                                            <div class="review-item" style="border-bottom: 1px solid #eee; padding: 15px 0; margin-bottom: 10px;">
+                                                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #{{ ['e74c3c', '3498db', '2ecc71', 'f39c12', '9b59b6'][rand(0,4)] }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+                                                                        {{ strtoupper(substr($review->HoTen ?? 'K', 0, 1)) }}
+                                                                    </div>
+                                                                    <div style="flex: 1;">
+                                                                        <div style="font-weight: 600;">{{ $review->HoTen ?? 'Khách hàng' }}</div>
+                                                                        <div style="font-size: 12px; color: #999;">{{ \Carbon\Carbon::parse($review->NgayDanhGia)->format('d/m/Y') }}</div>
+                                                                    </div>
+                                                                    <div style="color: #f39c12; font-size: 14px;">
+                                                                        @for($i = 1; $i <= 5; $i++)
+                                                                            @if($i <= $review->SoSao)
+                                                                                <i class="fas fa-star"></i>
+                                                                            @else
+                                                                                <i class="far fa-star"></i>
+                                                                            @endif
+                                                                        @endfor
+                                                                        <span style="margin-left: 5px;">{{ $review->SoSao }}/5</span>
+                                                                    </div>
+                                                                </div>
+                                                                @if($review->NoiDung)
+                                                                    <p style="color: #555; font-size: 14px; margin: 0; line-height: 1.6;">{{ $review->NoiDung }}</p>
+                                                                @endif
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                                
+                                                @if($hasMore)
+                                                    <div style="text-align: center; margin-top: 15px;">
+                                                        @if($remaining->count() > 0)
+                                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleAllReviews({{ $chuyen->MaChuyenXe }}, this)">
+                                                                <span class="show-all-text">Xem tất cả {{ $chuyen->nhaXe->total_reviews }} đánh giá</span>
+                                                                <span class="hide-all-text" style="display: none;">Ẩn bớt đánh giá</span>
+                                                            </button>
+                                                        @else
+                                                            <a href="{{ route('nhaxe.show', $chuyen->nhaXe->MaNhaXe) }}" class="btn btn-sm btn-outline-primary">
+                                                                Xem tất cả {{ $chuyen->nhaXe->total_reviews }} đánh giá
+                                                            </a>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <div style="text-align: center; padding: 20px;">
+                                                    <p style="color: #6c757d; margin-bottom: 15px;">Hiện chưa có đánh giá chi tiết.</p>
+                                                    <a href="{{ route('nhaxe.show', $chuyen->nhaXe->MaNhaXe) }}" class="btn btn-sm btn-outline-primary">
+                                                        Xem tất cả {{ $chuyen->nhaXe->total_reviews }} đánh giá
+                                                    </a>
                                                 </div>
-                                            @endforeach
-                                            <a href="{{ route('nhaxe.show', $chuyen->nhaXe->MaNhaXe) }}" class="btn btn-sm btn-outline-primary mt-2">
-                                                Xem tất cả {{ $chuyen->nhaXe->total_reviews }} đánh giá
-                                            </a>
+                                            @endif
                                         @else
-                                            <p style="color: #6c757d; text-align: center; padding: 20px;">Chưa có đánh giá nào.</p>
+                                            <div style="text-align: center; padding: 40px 20px;">
+                                                <i class="fas fa-star" style="font-size: 48px; color: #ddd; margin-bottom: 15px; display: block;"></i>
+                                                <p style="color: #6c757d; font-size: 16px; margin: 0;">Chưa có đánh giá nào.</p>
+                                            </div>
                                         @endif
                                     </div>
                                 </div>
@@ -1212,6 +1266,25 @@ function showTab(button, contentId) {
     if (content) {
         content.classList.add('active');
         content.style.display = 'block';
+    }
+}
+
+// Toggle hiển thị tất cả đánh giá
+function toggleAllReviews(chuyenXeId, button) {
+    const remainingReviews = document.querySelector('.reviews-remaining-' + chuyenXeId);
+    const showAllText = button.querySelector('.show-all-text');
+    const hideAllText = button.querySelector('.hide-all-text');
+    
+    if (remainingReviews) {
+        if (remainingReviews.style.display === 'none' || !remainingReviews.style.display) {
+            remainingReviews.style.display = 'block';
+            showAllText.style.display = 'none';
+            hideAllText.style.display = 'inline';
+        } else {
+            remainingReviews.style.display = 'none';
+            showAllText.style.display = 'inline';
+            hideAllText.style.display = 'none';
+        }
     }
 }
 </script>

@@ -291,7 +291,7 @@
     <div class="row">
         <div class="col-md-8">
             <!-- Đánh giá -->
-            <div class="rating-section">
+            <div class="rating-section" id="reviews">
                 <h2 class="rating-title">Đánh giá về nhà xe</h2>
                 
                 <div class="rating-score">
@@ -309,54 +309,6 @@
                         <div class="rating-count">/ 5 • {{ $totalReviews }} đánh giá</div>
                     </div>
                 </div>
-                
-                <!-- Form đánh giá -->
-                @if(session()->has('user') && session('user'))
-                    @if($daDanhGia)
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>Bạn đã đánh giá nhà xe này rồi!
-                        </div>
-                    @elseif(!$duocPhepDanhGia)
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Bạn chỉ có thể đánh giá sau khi đã hoàn thành chuyến xe của nhà xe này!
-                        </div>
-                    @else
-                        <div class="mb-4 p-3 border rounded" style="background: #f8f9fa;">
-                            <h5 class="mb-3">Viết đánh giá của bạn</h5>
-                            <form action="{{ route('danhgia.store') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="MaNhaXe" value="{{ $nhaxe->MaNhaXe }}">
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Đánh giá của bạn <span class="text-danger">*</span></label>
-                                    <select name="SoSao" class="form-select" required>
-                                        <option value="">-- Chọn đánh giá --</option>
-                                        <option value="5">5/5 - Rất hài lòng</option>
-                                        <option value="4">4/5 - Hài lòng</option>
-                                        <option value="3">3/5 - Trung bình</option>
-                                        <option value="2">2/5 - Chưa hài lòng</option>
-                                        <option value="1">1/5 - Không hài lòng</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Nội dung đánh giá</label>
-                                    <textarea name="NoiDung" class="form-control" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về nhà xe này..."></textarea>
-                                </div>
-                                
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane me-2"></i>Gửi đánh giá
-                                </button>
-                            </form>
-                        </div>
-                    @endif
-                @else
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Vui lòng <a href="{{ route('login.form') }}">đăng nhập</a> để đánh giá nhà xe này!
-                    </div>
-                @endif
                 
                 <hr class="my-4">
                 
@@ -462,4 +414,23 @@
     </div>
     
 </div>
+
+@push('scripts')
+<script>
+// Tự động scroll đến phần đánh giá khi có hash #reviews trong URL
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#reviews') {
+        const reviewsSection = document.getElementById('reviews');
+        if (reviewsSection) {
+            setTimeout(function() {
+                reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Thêm offset để không bị che bởi header
+                window.scrollBy(0, -100);
+            }, 100);
+        }
+    }
+});
+</script>
+@endpush
+
 @endsection

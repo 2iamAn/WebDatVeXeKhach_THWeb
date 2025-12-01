@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Carbon\Carbon;
 
 class VeXeController extends Controller
 {
@@ -160,7 +161,7 @@ class VeXeController extends Controller
 
     public function cancel(int $id): RedirectResponse
     {
-        $ve = VeXe::with('ghe')->findOrFail($id);
+        $ve = VeXe::with(['ghe', 'chuyenXe'])->findOrFail($id);
         
         if (session('role') === 'user' && session('user')) {
             $user = session('user');
@@ -176,6 +177,24 @@ class VeXeController extends Controller
                 ->with('error', 'Vé này đã được hủy rồi!');
         }
         
+        // Tính toán thời gian từ bây giờ đến giờ khởi hành
+        $now = Carbon::now();
+        $gioKhoiHanh = Carbon::parse($ve->chuyenXe->GioKhoiHanh);
+        $soGioTruocKhoiHanh = $now->diffInHours($gioKhoiHanh, false); // false = không tính giá trị tuyệt đối
+        
+        // Xác định thông báo dựa trên thời gian hủy vé
+        $thongBao = '';
+        if ($soGioTruocKhoiHanh >= 24) {
+            // Hủy trước 24 giờ (1 ngày)
+            $thongBao = 'Hủy vé trước 24 giờ hoàn 90% giá vé';
+        } elseif ($soGioTruocKhoiHanh >= 12) {
+            // Hủy trước 12 giờ (từ 12 đến 24 giờ)
+            $thongBao = 'Hủy vé trước 12 giờ hoàn 70% giá vé';
+        } else {
+            // Hủy sau 12 giờ (trong vòng 12 giờ trước khởi hành hoặc đã quá giờ khởi hành)
+            $thongBao = 'Không hoàn tiền';
+        }
+        
         DB::transaction(function () use ($ve) {
             $ve->update(['TrangThai' => 'Hủy']);
             if ($ve->ghe) {
@@ -184,6 +203,6 @@ class VeXeController extends Controller
         });
         
         return redirect()->route('vexe.booking')
-            ->with('success', 'Đã hủy vé #' . $ve->MaVe . ' thành công!');
+            ->with('success', 'Đã hủy vé #' . $ve->MaVe . ' thành công! ' . $thongBao);
     }
 }

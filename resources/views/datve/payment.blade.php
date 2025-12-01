@@ -19,13 +19,6 @@
                         </div>
                     @endif
 
-                    @if(session('success') && !session('payment_success'))
-                        <div class="alert alert-info alert-dismissible fade show" role="alert">
-                            <i class="fas fa-info-circle me-2"></i>{{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    @endif
-
                     @if(session('error'))
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
@@ -99,7 +92,6 @@
                                     <label class="form-label fw-bold">Phương thức thanh toán <span class="text-danger">*</span></label>
                                     <select name="PhuongThuc" class="form-select" required>
                                         <option value="">-- Chọn phương thức thanh toán --</option>
-                                        <option value="Tiền mặt">Tiền mặt</option>
                                         <option value="Chuyển khoản">Chuyển khoản ngân hàng</option>
                                         <option value="Momo">Ví điện tử Momo</option>
                                         <option value="VNPAY">VNPAY</option>
@@ -119,7 +111,7 @@
                         </form>
                     @else
                         <div class="text-center">
-                            <a href="{{ route('vexe.index') }}" class="btn btn-primary">
+                            <a href="{{ route('vexe.booking') }}" class="btn btn-primary btn-lg">
                                 <i class="fas fa-list me-2"></i>Xem danh sách vé
                             </a>
                         </div>

@@ -79,7 +79,7 @@ class AuthController extends Controller
         return match($user->LoaiNguoiDung) {
             NguoiDung::ROLE_ADMIN => redirect()->route('admin.dashboard'),
             NguoiDung::ROLE_NHA_XE => redirect()->route('partner.dashboard'),
-            default => redirect('/')->with('success', 'Đăng nhập thành công! Chào mừng bạn trở lại.'),
+            default => redirect('/'),
         };
     }
 

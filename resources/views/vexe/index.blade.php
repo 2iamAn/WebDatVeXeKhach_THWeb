@@ -129,6 +129,9 @@
                         <i class="fas fa-info-circle me-2"></i>Trạng thái
                       </th>
                       <th style="border: none; padding: 15px; text-align: center;">
+                        <i class="fas fa-star me-2"></i>Đánh giá
+                      </th>
+                      <th style="border: none; padding: 15px; text-align: center;">
                         <i class="fas fa-cog me-2"></i>Thao tác
                       </th>
                     </tr>
@@ -187,8 +190,41 @@
                           </span>
                         </td>
                         <td style="padding: 15px; text-align: center;">
+                          @php
+                            $trangThai = trim($v->TrangThai ?? '');
+                            // Kiểm tra trạng thái "Đã sử dụng" - kiểm tra chính xác giá trị hiển thị
+                            $isDaSuDung = false;
+                            if ($trangThai) {
+                                // Kiểm tra chính xác
+                                if ($trangThai === 'Đã sử dụng' || $trangThai === 'đã sử dụng' || $trangThai === 'Da su dung' || $trangThai === 'da su dung') {
+                                    $isDaSuDung = true;
+                                } else {
+                                    // Kiểm tra chứa chuỗi (không phân biệt hoa thường)
+                                    $trangThaiLower = mb_strtolower($trangThai, 'UTF-8');
+                                    $isDaSuDung = strpos($trangThaiLower, 'sử dụng') !== false || 
+                                                 strpos($trangThaiLower, 'su dung') !== false ||
+                                                 strpos($trangThaiLower, 'sử') !== false;
+                                }
+                            }
+                            // Lấy mã nhà xe
+                            $maNhaXe = null;
+                            if (isset($v->chuyenXe) && $v->chuyenXe && isset($v->chuyenXe->nhaXe) && $v->chuyenXe->nhaXe) {
+                                $maNhaXe = $v->chuyenXe->nhaXe->MaNhaXe ?? null;
+                            }
+                          @endphp
+                          @if($isDaSuDung && $maNhaXe)
+                            <button type="button" class="btn btn-sm btn-warning" style="border-radius: 8px; color: #fff; font-weight: 600; padding: 6px 12px; min-width: 100px;" onclick="openReviewModal({{ $maNhaXe }}, '{{ addslashes($v->chuyenXe->nhaXe->TenNhaXe ?? 'Nhà xe') }}')">
+                              <i class="fas fa-star me-1"></i>Đánh giá
+                            </button>
+                          @elseif($isDaSuDung)
+                            <span class="text-danger small" title="Không tìm thấy thông tin nhà xe">Lỗi</span>
+                          @else
+                            <span class="text-muted">---</span>
+                          @endif
+                        </td>
+                        <td style="padding: 15px; text-align: center;">
                           @if($canCancel)
-                            <form method="POST" action="{{ route('vexe.cancel', $v->MaVe) }}" style="display: inline-block;" onsubmit="return confirm('Bạn có chắc chắn muốn hủy vé {{ $v->MaVe }}?');">
+                            <form method="POST" action="{{ route('vexe.cancel', $v->MaVe) }}" style="display: inline-block;" onsubmit="return confirmCancelTicket(event, '{{ $v->MaVe }}', '{{ $v->chuyenXe->GioKhoiHanh ? \Carbon\Carbon::parse($v->chuyenXe->GioKhoiHanh)->format('Y-m-d H:i:s') : '' }}');">
                               @csrf
                               <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 8px;">
                                 <i class="fas fa-times-circle me-1"></i>Hủy vé
@@ -450,4 +486,164 @@
     </div>
 </div>
 @endif
+
+<!-- Modal Đánh giá -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #4FB99F 0%, #3a8f7a 100%); color: white; border-radius: 15px 15px 0 0; border: none;">
+                <h5 class="modal-title" id="reviewModalLabel" style="font-weight: 600;">
+                    <i class="fas fa-star me-2"></i>Đánh giá nhà xe
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 30px;">
+                <div class="mb-3">
+                    <h6 id="reviewNhaXeName" style="color: #2c3e50; font-weight: 600; margin-bottom: 20px;"></h6>
+                </div>
+                <form id="reviewForm" method="POST" action="{{ route('danhgia.store') }}">
+                    @csrf
+                    <input type="hidden" name="MaNhaXe" id="reviewMaNhaXe">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Đánh giá của bạn <span class="text-danger">*</span></label>
+                        <select name="SoSao" id="reviewSoSao" class="form-select" required style="border-radius: 8px; padding: 10px;">
+                            <option value="">-- Chọn đánh giá --</option>
+                            <option value="5">5/5 - Rất hài lòng</option>
+                            <option value="4">4/5 - Hài lòng</option>
+                            <option value="3">3/5 - Trung bình</option>
+                            <option value="2">2/5 - Chưa hài lòng</option>
+                            <option value="1">1/5 - Không hài lòng</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nội dung đánh giá</label>
+                        <textarea name="NoiDung" id="reviewNoiDung" class="form-control" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về nhà xe này..." style="border-radius: 8px; resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 8px; padding: 8px 20px;">
+                            <i class="fas fa-times me-1"></i>Hủy
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #4FB99F 0%, #3a8f7a 100%); border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600;">
+                            <i class="fas fa-paper-plane me-1"></i>Gửi đánh giá
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+// Mở modal đánh giá
+function openReviewModal(maNhaXe, tenNhaXe) {
+    // Set thông tin nhà xe
+    document.getElementById('reviewMaNhaXe').value = maNhaXe;
+    document.getElementById('reviewNhaXeName').textContent = 'Đánh giá về: ' + tenNhaXe;
+    
+    // Reset form
+    document.getElementById('reviewForm').reset();
+    document.getElementById('reviewSoSao').value = '';
+    document.getElementById('reviewNoiDung').value = '';
+    
+    // Mở modal
+    const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+    modal.show();
+}
+
+// Xử lý submit form đánh giá
+document.addEventListener('DOMContentLoaded', function() {
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Có lỗi xảy ra');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Đóng modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+                    modal.hide();
+                    
+                    // Hiển thị thông báo thành công
+                    alert(data.message || 'Đánh giá của bạn đã được gửi thành công!');
+                    
+                    // Reload trang để cập nhật
+                    window.location.reload();
+                } else {
+                    // Hiển thị lỗi
+                    alert(data.message || 'Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error.message || 'Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.');
+            });
+        });
+    }
+});
+
+function confirmCancelTicket(event, maVe, gioKhoiHanh) {
+    event.preventDefault();
+    
+    // Trong onsubmit, event.target chính là form
+    const form = event.target;
+    
+    if (!gioKhoiHanh) {
+        if (confirm('Bạn có chắc chắn muốn hủy vé ' + maVe + '?')) {
+            form.submit();
+        }
+        return false;
+    }
+    
+    // Tính toán thời gian từ bây giờ đến giờ khởi hành
+    const now = new Date();
+    const gioKhoiHanhDate = new Date(gioKhoiHanh);
+    const diffMs = gioKhoiHanhDate - now;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    // Xác định thông báo dựa trên thời gian hủy vé
+    let thongBao = '';
+    if (diffHours >= 24) {
+        // Hủy trước 24 giờ (1 ngày)
+        thongBao = 'Hủy vé trước 24 giờ hoàn 90% giá vé';
+    } else if (diffHours >= 12) {
+        // Hủy trước 12 giờ (từ 12 đến 24 giờ)
+        thongBao = 'Hủy vé trước 12 giờ hoàn 70% giá vé';
+    } else {
+        // Hủy sau 12 giờ (trong vòng 12 giờ trước khởi hành hoặc đã quá giờ khởi hành)
+        thongBao = 'Không hoàn tiền';
+    }
+    
+    const message = 'Bạn có chắc chắn muốn hủy vé ' + maVe + '?\n\n' + thongBao;
+    
+    if (confirm(message)) {
+        form.submit();
+    }
+    
+    return false;
+}
+</script>
+@endpush
+
 @endsection

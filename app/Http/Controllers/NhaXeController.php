@@ -100,12 +100,25 @@ class NhaXeController extends Controller
             $daDanhGia = $nhaxe->danhGia()->where('MaNguoiDung', $userId)->exists();
             
             // Kiểm tra có vé đã hoàn thành chuyến của nhà xe này không
+            // Cho phép đánh giá nếu:
+            // 1. Vé có trạng thái "Đã sử dụng" (đã xác nhận lên xe) - không cần kiểm tra giờ đến
+            // 2. Hoặc vé đã thanh toán và giờ đến đã qua
             $duocPhepDanhGia = \App\Models\VeXe::whereHas('chuyenXe', function($q) use ($nhaxe) {
-                    $q->where('MaNhaXe', $nhaxe->MaNhaXe)
-                      ->where('GioDen', '<', now()); // Chuyến xe đã hoàn thành
+                    $q->where('MaNhaXe', $nhaxe->MaNhaXe);
                 })
                 ->where('MaNguoiDung', $userId)
-                ->whereIn('TrangThai', ['DaDat', 'Đã thanh toán'])
+                ->where(function($query) use ($nhaxe) {
+                    // Trường hợp 1: Vé đã được xác nhận lên xe (Đã sử dụng)
+                    $query->where('TrangThai', 'Đã sử dụng')
+                          // Trường hợp 2: Vé đã thanh toán và giờ đến đã qua
+                          ->orWhere(function($q) use ($nhaxe) {
+                              $q->whereIn('TrangThai', ['DaDat', 'Đã thanh toán', 'da_dat'])
+                                ->whereHas('chuyenXe', function($chuyenQuery) use ($nhaxe) {
+                                    $chuyenQuery->where('MaNhaXe', $nhaxe->MaNhaXe)
+                                                ->where('GioDen', '<', now());
+                                });
+                          });
+                })
                 ->exists();
         }
         

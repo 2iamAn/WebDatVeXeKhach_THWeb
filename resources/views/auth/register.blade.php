@@ -6,10 +6,25 @@
 
 <style>
 .register-container {
+    min-height: calc(100vh - 120px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #e0f6f1, #f6fffd);
+}
+
+.register-inner {
+    max-width: 1100px;
+    width: 100%;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
     display: flex;
     justify-content: space-between;
-    padding: 40px 80px;
-    background: #fff;
+    align-items: center;
+    padding: 40px 50px;
+    gap: 40px;
 }
 
 .register-left h1 {
@@ -85,16 +100,46 @@
     box-shadow: 0 6px 20px rgba(79, 185, 159, 0.5);
     color: #fff;
 }
+
+@media (max-width: 992px) {
+    .register-inner {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px 24px;
+    }
+
+    .register-left img {
+        max-width: 320px;
+        width: 100%;
+        margin: 0 auto 10px;
+    }
+
+    .register-box {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .register-left h1 {
+        font-size: 32px;
+    }
+
+    .register-left p {
+        font-size: 20px;
+    }
+}
 </style>
 
 <div class="register-container">
+
+    <div class="register-inner">
 
     <!-- BÊN TRÁI -->
     <div class="register-left">
         <h1>BUSTRIP</h1>
         <p>Nhiều nhà xe - Một điểm đặt</p>
 
-        <img src="{{ asset('image/bus-register.png') }}" style="width:450px;">
+        <img src="{{ asset('image/buss.png') }}" style="width:450px;">
 
     </div>
 
@@ -133,6 +178,7 @@
             <button class="btn-register-orange">Đăng ký</button>
         </form>
 
+    </div>
     </div>
 </div>
 

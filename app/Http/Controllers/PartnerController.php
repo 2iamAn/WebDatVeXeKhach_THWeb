@@ -509,6 +509,41 @@ public function cancelTicketFromPartner(Request $request, $maVe)
     return redirect()->back()->with('success', 'Đã hủy vé #' . $ve->MaVe . ' thành công!');
 }
 
+public function confirmBoarding(Request $request, $maVe)
+{
+    $maNhaXe = $this->ensurePartner();
+    
+    $ve = VeXe::with(['chuyenXe', 'ghe'])->findOrFail($maVe);
+    
+    // Kiểm tra quyền
+    if ($ve->chuyenXe->MaNhaXe != $maNhaXe) {
+        return response()->json(['success' => false, 'message' => 'Bạn không có quyền xác nhận vé này!'], 403);
+    }
+    
+    // Kiểm tra vé đã được hủy chưa
+    if (in_array(strtolower($ve->TrangThai ?? ''), ['hủy', 'huy', 'hoàn tiền', 'hoan tien'])) {
+        return response()->json(['success' => false, 'message' => 'Không thể xác nhận vé đã bị hủy!'], 400);
+    }
+    
+    try {
+        DB::transaction(function () use ($ve) {
+            // Cập nhật trạng thái vé thành "Đã sử dụng"
+            $ve->TrangThai = 'Đã sử dụng';
+            $ve->save();
+        });
+        
+        return response()->json([
+            'success' => true, 
+            'message' => 'Đã xác nhận khách lên xe thành công!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Có lỗi xảy ra khi xác nhận: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 public function tickets()
 {
     $maNhaXe = $this->ensurePartner();

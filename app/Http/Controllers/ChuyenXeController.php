@@ -179,6 +179,15 @@ class ChuyenXeController extends Controller
                 
                 $chuyen->nhaXe->rating = $ratingData->avg_rating ?? 0;
                 $chuyen->nhaXe->total_reviews = $ratingData->total_reviews ?? 0;
+                
+                // Lấy tất cả đánh giá (không giới hạn)
+                $chuyen->nhaXe->recent_reviews = DB::table('danhgia')
+                    ->where('MaNhaXe', $chuyen->nhaXe->MaNhaXe)
+                    ->where('HienThi', 1)
+                    ->leftJoin('nguoidung', 'danhgia.MaNguoiDung', '=', 'nguoidung.MaNguoiDung')
+                    ->select('danhgia.*', 'nguoidung.HoTen')
+                    ->orderByDesc('danhgia.NgayDanhGia')
+                    ->get();
             }
             
             return $chuyen;

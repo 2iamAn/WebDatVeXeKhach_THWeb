@@ -215,6 +215,7 @@ Route::prefix('partner')->name('partner.')->group(function () {
     Route::post('/seats/lock/{maGhe}', [PartnerController::class, 'lockSeat'])->name('seats.lock');
     Route::post('/seats/unlock/{maGhe}', [PartnerController::class, 'unlockSeat'])->name('seats.unlock');
     Route::post('/seats/cancel-ticket/{maVe}', [PartnerController::class, 'cancelTicketFromPartner'])->name('seats.cancel-ticket');
+    Route::post('/seats/confirm-boarding/{maVe}', [PartnerController::class, 'confirmBoarding'])->name('seats.confirm-boarding');
     Route::get('/tickets', [PartnerController::class, 'tickets'])->name('tickets');
     Route::post('/tickets/update-status/{id}', [PartnerController::class, 'updateTicketStatus'])->name('tickets.update-status');
     Route::get('/revenue', [PartnerController::class, 'revenue'])->name('revenue');

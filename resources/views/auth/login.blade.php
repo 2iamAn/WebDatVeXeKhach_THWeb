@@ -10,10 +10,25 @@
 @endif
 <style>
 .login-container {
+    min-height: calc(100vh - 120px); /* trừ phần header/footer nếu có */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #e0f6f1, #f6fffd);
+}
+
+.login-inner {
+    max-width: 1100px;
+    width: 100%;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
     display: flex;
     justify-content: space-between;
-    padding: 40px 80px;
-    background: #fff;
+    align-items: center;
+    padding: 40px 50px;
+    gap: 40px;
 }
 
 .login-left h1 {
@@ -89,16 +104,46 @@
     box-shadow: 0 6px 20px rgba(79, 185, 159, 0.5);
     color: #fff;
 }
+
+@media (max-width: 992px) {
+    .login-inner {
+        flex-direction: column;
+        text-align: center;
+        padding: 30px 24px;
+    }
+
+    .login-left img {
+        max-width: 320px;
+        width: 100%;
+        margin: 0 auto 10px;
+    }
+
+    .login-box {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-left h1 {
+        font-size: 32px;
+    }
+
+    .login-left p {
+        font-size: 20px;
+    }
+}
 </style>
 
 <div class="login-container">
+
+    <div class="login-inner">
 
     <!-- BÊN TRÁI -->
     <div class="login-left">
         <h1>BUSTRIP</h1>
         <p>Nhiều nhà xe - Một điểm đặt</p>
 
-        <img src="{{ asset('image/bus-login.png') }}" style="width:450px;">
+        <img src="{{ asset('image/buss.png') }}" style="width:450px;">
         
     </div>
 
@@ -139,6 +184,7 @@
             Quên mật khẩu
         </a>
 
+    </div>
     </div>
 </div>
 
