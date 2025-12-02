@@ -157,18 +157,30 @@
             <a href="{{ route('register.form') }}"><button>ĐĂNG KÝ</button></a>
         </div>
 
-        <form method="POST" action="{{ route('login.process') }}" class="login-form">
+        @if(session('success'))
+            <div class="alert alert-success" style="padding: 12px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb;">
+                <i class="fa fa-check-circle"></i> {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('pending_approval'))
+            <div class="alert alert-warning" style="padding: 12px; border-radius: 8px; margin-bottom: 20px; background: #fff3cd; color: #856404; border: 1px solid #ffeaa7;">
+                <i class="fa fa-info-circle"></i> Tài khoản của bạn đang chờ admin phê duyệt. Bạn sẽ nhận được thông báo khi tài khoản được kích hoạt.
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login.process') }}" class="login-form" id="loginForm">
             @csrf
 
             <label class="form-label fw-semibold text-muted">Tên đăng nhập hoặc Email</label>
-            <input type="text" name="TenDangNhap" class="form-input" placeholder="Nhập tên đăng nhập hoặc email" value="{{ old('TenDangNhap') }}" required>
+            <input type="text" name="TenDangNhap" id="loginEmail" class="form-input" placeholder="Nhập tên đăng nhập hoặc email" value="{{ $auto_email ?? old('TenDangNhap') }}" required>
             @error('TenDangNhap')
                 <p class="text-danger small mb-2">{{ $message }}</p>
             @enderror
             <small class="text-muted">Bạn có thể đăng nhập bằng tên đăng nhập hoặc email</small>
 
             <label class="form-label fw-semibold text-muted mt-2">Mật khẩu</label>
-            <input type="password" name="MatKhau" class="form-input" placeholder="Nhập mật khẩu" required>
+            <input type="password" name="MatKhau" id="loginPassword" class="form-input" placeholder="Nhập mật khẩu" value="{{ $auto_password ?? '' }}" required>
             @error('MatKhau')
                 <p class="text-danger small mb-2">{{ $message }}</p>
             @enderror
@@ -177,8 +189,43 @@
                 <div class="alert alert-danger py-2">{{ $message }}</div>
             @enderror
 
-            <button class="btn-login-orange">Đăng nhập</button>
+            <button type="submit" class="btn-login-orange" id="loginButton">
+                @if(isset($auto_email) && isset($auto_password))
+                    <i class="fa fa-sign-in-alt"></i> Đăng nhập ngay
+                @else
+                    Đăng nhập
+                @endif
+            </button>
         </form>
+
+        @if(isset($auto_email) && isset($auto_password))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Highlight các trường đã được điền sẵn
+                const emailInput = document.getElementById('loginEmail');
+                const passwordInput = document.getElementById('loginPassword');
+                
+                if (emailInput && emailInput.value) {
+                    emailInput.style.background = '#e8f5e9';
+                    emailInput.style.borderColor = '#4FB99F';
+                }
+                
+                if (passwordInput && passwordInput.value) {
+                    passwordInput.style.background = '#e8f5e9';
+                    passwordInput.style.borderColor = '#4FB99F';
+                }
+                
+                // Tự động focus vào nút đăng nhập
+                setTimeout(function() {
+                    const loginButton = document.getElementById('loginButton');
+                    if (loginButton) {
+                        loginButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        loginButton.focus();
+                    }
+                }, 300);
+            });
+        </script>
+        @endif
 
         <a href="#" style="color:#4FB99F; display:block; margin-top:15px; text-align:center; font-weight: 500;">
             Quên mật khẩu

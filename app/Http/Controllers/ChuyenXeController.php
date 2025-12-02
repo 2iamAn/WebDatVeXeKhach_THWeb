@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class ChuyenXeController extends Controller
@@ -98,7 +99,7 @@ class ChuyenXeController extends Controller
         $diemDi = trim($validated['diem_di']);
         $diemDen = trim($validated['diem_den']);
         
-        // Tìm tuyến đường phù hợp
+        // Tối ưu: Tìm tuyến đường phù hợp với index hỗ trợ
         $tuyenIds = TuyenDuong::where(function($q) use ($diemDi, $diemDen) {
                 $q->where('DiemDi', $diemDi)
                   ->where('DiemDen', $diemDen);
@@ -107,6 +108,7 @@ class ChuyenXeController extends Controller
                 $q->where('DiemDi', 'like', "%{$diemDi}%")
                   ->where('DiemDen', 'like', "%{$diemDen}%");
             })
+            ->where('TrangThai', 'DaDuyet') // Chỉ lấy tuyến đã duyệt
             ->pluck('MaTuyen');
 
         if ($tuyenIds->isEmpty()) {
@@ -120,10 +122,11 @@ class ChuyenXeController extends Controller
         $ngayKhoiHanh = Carbon::parse($validated['ngay_khoi_hanh'])->startOfDay();
         $ngayKetThucExtended = $ngayKhoiHanh->copy()->addDays(30)->endOfDay();
         
+        // Tối ưu: Sử dụng scope và eager loading tốt hơn
         $query = ChuyenXe::with(['nhaXe', 'tuyenDuong', 'ghe', 'xe'])
             ->whereIn('MaTuyen', $tuyenIds)
             ->whereBetween('GioKhoiHanh', [$ngayKhoiHanh, $ngayKetThucExtended])
-            ->whereNotIn('TrangThai', ['ChoDuyet', 'TuChoi', 'BiKhoa']);
+            ->daDuyet(); // Sử dụng scope thay vì whereNotIn
 
         // Lọc theo giờ đi
         if ($request->filled('gio_di')) {
@@ -151,43 +154,66 @@ class ChuyenXeController extends Controller
 
         $chuyens = $query->get();
 
+        // Tối ưu: Lấy tất cả dữ liệu cần thiết trước để tránh N+1 queries
+        $maChuyenXeIds = $chuyens->pluck('MaChuyenXe')->toArray();
+        $maNhaXeIds = $chuyens->pluck('MaNhaXe')->unique()->filter()->toArray();
+        
+        // Tối ưu: Sử dụng scope mới
+        $gheDaDatCounts = VeXe::whereIn('MaChuyenXe', $maChuyenXeIds)
+            ->daThanhToan()
+            ->selectRaw('MaChuyenXe, COUNT(*) as count')
+            ->groupBy('MaChuyenXe')
+            ->pluck('count', 'MaChuyenXe')
+            ->toArray();
+        
+        // Lấy rating data cho tất cả nhà xe một lần
+        $ratingDataByNhaXe = DB::table('danhgia')
+            ->whereIn('MaNhaXe', $maNhaXeIds)
+            ->where('HienThi', 1)
+            ->selectRaw('MaNhaXe, ROUND(AVG(SoSao), 1) as avg_rating, COUNT(*) as total_reviews')
+            ->groupBy('MaNhaXe')
+            ->get()
+            ->keyBy('MaNhaXe')
+            ->toArray();
+        
+        // Lấy đánh giá gần đây cho tất cả nhà xe (giới hạn 5 mỗi nhà xe để tránh quá nhiều dữ liệu)
+        $recentReviewsByNhaXe = DB::table('danhgia')
+            ->whereIn('MaNhaXe', $maNhaXeIds)
+            ->where('HienThi', 1)
+            ->leftJoin('nguoidung', 'danhgia.MaNguoiDung', '=', 'nguoidung.MaNguoiDung')
+            ->select('danhgia.*', 'nguoidung.HoTen', 'danhgia.MaNhaXe')
+            ->orderByDesc('danhgia.NgayDanhGia')
+            ->get()
+            ->groupBy('MaNhaXe')
+            ->map(function($reviews) {
+                return $reviews->take(5)->values();
+            })
+            ->toArray();
+
         // Tính số ghế trống và rating, map dữ liệu từ relationships
-        $chuyens = $chuyens->map(function ($chuyen) {
+        $chuyens = $chuyens->map(function ($chuyen) use ($gheDaDatCounts, $ratingDataByNhaXe, $recentReviewsByNhaXe) {
             // Map thoiGianHanhTrinh từ tuyenDuong
             $chuyen->thoiGianHanhTrinh = $chuyen->tuyenDuong?->ThoiGianHanhTrinh ?? null;
             $tongGhe = $chuyen->ghe->count();
-            // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
-            $gheDaDat = VeXe::where('MaChuyenXe', $chuyen->MaChuyenXe)
-                ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
-                ->whereHas('thanhToan', function($query) {
-                    $query->where('TrangThai', 'Success');
-                })
-                ->count();
+            
+            // Lấy số ghế đã đặt từ cache
+            $gheDaDat = $gheDaDatCounts[$chuyen->MaChuyenXe] ?? 0;
             $chuyen->so_ghe_trong = max(0, $tongGhe - $gheDaDat);
             
             if ($tongGhe == 0 && $chuyen->xe) {
                 $chuyen->so_ghe_trong = 40; // Default
             }
             
-            // Rating cho nhà xe
-            if ($chuyen->nhaXe) {
-                $ratingData = DB::table('danhgia')
-                    ->where('MaNhaXe', $chuyen->nhaXe->MaNhaXe)
-                    ->where('HienThi', 1)
-                    ->selectRaw('ROUND(AVG(SoSao), 1) as avg_rating, COUNT(*) as total_reviews')
-                    ->first();
-                
+            // Rating cho nhà xe từ cache
+            if ($chuyen->nhaXe && isset($ratingDataByNhaXe[$chuyen->nhaXe->MaNhaXe])) {
+                $ratingData = $ratingDataByNhaXe[$chuyen->nhaXe->MaNhaXe];
                 $chuyen->nhaXe->rating = $ratingData->avg_rating ?? 0;
                 $chuyen->nhaXe->total_reviews = $ratingData->total_reviews ?? 0;
-                
-                // Lấy tất cả đánh giá (không giới hạn)
-                $chuyen->nhaXe->recent_reviews = DB::table('danhgia')
-                    ->where('MaNhaXe', $chuyen->nhaXe->MaNhaXe)
-                    ->where('HienThi', 1)
-                    ->leftJoin('nguoidung', 'danhgia.MaNguoiDung', '=', 'nguoidung.MaNguoiDung')
-                    ->select('danhgia.*', 'nguoidung.HoTen')
-                    ->orderByDesc('danhgia.NgayDanhGia')
-                    ->get();
+                $chuyen->nhaXe->recent_reviews = $recentReviewsByNhaXe[$chuyen->nhaXe->MaNhaXe] ?? collect();
+            } else {
+                $chuyen->nhaXe->rating = 0;
+                $chuyen->nhaXe->total_reviews = 0;
+                $chuyen->nhaXe->recent_reviews = collect();
             }
             
             return $chuyen;

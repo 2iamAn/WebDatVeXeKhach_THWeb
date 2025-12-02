@@ -64,4 +64,20 @@ class ChuyenXe extends Model
     {
         return $query->where('TrangThai', 'Còn chỗ');
     }
+
+    /**
+     * Scope để lấy các chuyến đã được duyệt
+     */
+    public function scopeDaDuyet(Builder $query): Builder
+    {
+        return $query->whereNotIn('TrangThai', ['ChoDuyet', 'TuChoi', 'BiKhoa']);
+    }
+
+    /**
+     * Scope để lấy các chuyến trong khoảng thời gian
+     */
+    public function scopeTrongKhoangThoiGian(Builder $query, $startDate, $endDate): Builder
+    {
+        return $query->whereBetween('GioKhoiHanh', [$startDate, $endDate]);
+    }
 }

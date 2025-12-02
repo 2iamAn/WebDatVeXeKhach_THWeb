@@ -16,4 +16,23 @@ export default defineConfig({
             host: 'localhost',
         },
     },
+    build: {
+        // Tối ưu production build
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['axios'],
+                },
+            },
+        },
+        // Tối ưu kích thước bundle
+        chunkSizeWarningLimit: 1000,
+        // Minify CSS và JS
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true, // Loại bỏ console.log trong production
+            },
+        },
+    },
 });

@@ -79,6 +79,33 @@
     box-shadow: 0 0 0 3px rgba(79, 185, 159, 0.15);
 }
 
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-input.is-invalid {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.form-input.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.error-message {
+    display: block;
+    color: #dc3545;
+    font-size: 13px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    padding-left: 5px;
+}
+
+.error-message i {
+    margin-right: 5px;
+}
+
 .btn-register-orange {
     margin-top: 10px;
     width: 100%;
@@ -153,9 +180,15 @@
             <button class="active">ĐĂNG KÝ</button>
         </div>
 
+        @if(session('error'))
+            <div class="alert alert-danger" style="padding: 12px; border-radius: 8px; margin-bottom: 20px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                <i class="fa fa-exclamation-triangle"></i> {{ session('error') }}
+            </div>
+        @endif
+
         @if($errors->any())
-            <div class="alert alert-danger">
-                <ul class="mb-0">
+            <div class="alert alert-danger" style="padding: 12px; border-radius: 8px; margin-bottom: 20px; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+                <ul class="mb-0" style="padding-left: 20px;">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -163,20 +196,147 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('register.process') }}">
+        <form method="POST" action="{{ route('register.process') }}" id="registerForm">
             @csrf
 
-            <input type="text" name="HoTen" class="form-input" placeholder="Họ và tên" value="{{ old('HoTen') }}" required>
-            <input type="text" name="TenDangNhap" class="form-input" placeholder="Tên đăng nhập" value="{{ old('TenDangNhap') }}" required>
+            <!-- Họ và tên -->
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    name="HoTen" 
+                    class="form-input @error('HoTen') is-invalid @enderror" 
+                    placeholder="Họ và tên" 
+                    value="{{ old('HoTen') }}" 
+                    required
+                    minlength="2"
+                    maxlength="100"
+                >
+                @error('HoTen')
+                    <small class="error-message">
+                        <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                    </small>
+                @enderror
+            </div>
 
-            <input type="email" name="Email" class="form-input" placeholder="Email" value="{{ old('Email') }}" required>
+            <!-- Tên đăng nhập -->
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    name="TenDangNhap" 
+                    class="form-input @error('TenDangNhap') is-invalid @enderror" 
+                    placeholder="Tên đăng nhập (chỉ chữ, số, dấu _)" 
+                    value="{{ old('TenDangNhap') }}" 
+                    required
+                    minlength="3"
+                    maxlength="50"
+                    pattern="[a-zA-Z0-9_]+"
+                    title="Chỉ được chứa chữ cái, số và dấu gạch dưới"
+                >
+                @error('TenDangNhap')
+                    <small class="error-message">
+                        <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                    </small>
+                @enderror
+            </div>
 
-            <input type="password" name="MatKhau" class="form-input" placeholder="Mật khẩu" required>
+            <!-- Email -->
+            <div class="form-group">
+                <input 
+                    type="email" 
+                    name="Email" 
+                    class="form-input @error('Email') is-invalid @enderror" 
+                    placeholder="Email" 
+                    value="{{ $verified_email ?? old('Email') }}" 
+                    required 
+                    readonly 
+                    style="background: #f8f9fa; cursor: not-allowed;"
+                >
+                @if(isset($verified_email))
+                    <small style="color: #4FB99F; display: block; margin-top: -10px; margin-bottom: 15px;">
+                        <i class="fa fa-check-circle"></i> Email đã được xác thực: {{ $verified_email }}
+                    </small>
+                @endif
+                @error('Email')
+                    <small class="error-message">
+                        <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                    </small>
+                @enderror
+            </div>
 
-            <input type="text" name="SDT" class="form-input" placeholder="Số điện thoại" value="{{ old('SDT') }}" required>
+            <!-- Mật khẩu -->
+            <div class="form-group">
+                <input 
+                    type="password" 
+                    name="MatKhau" 
+                    class="form-input @error('MatKhau') is-invalid @enderror" 
+                    placeholder="Mật khẩu (tối thiểu 4 ký tự)" 
+                    required
+                    minlength="4"
+                    maxlength="255"
+                >
+                @error('MatKhau')
+                    <small class="error-message">
+                        <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                    </small>
+                @enderror
+            </div>
 
-            <button class="btn-register-orange">Đăng ký</button>
+            <!-- Số điện thoại -->
+            <div class="form-group">
+                <input 
+                    type="text" 
+                    name="SDT" 
+                    class="form-input @error('SDT') is-invalid @enderror" 
+                    placeholder="Số điện thoại (chỉ số, 10-15 chữ số)" 
+                    value="{{ old('SDT') }}" 
+                    required
+                    minlength="10"
+                    maxlength="15"
+                    pattern="[0-9]+"
+                    title="Chỉ được nhập số"
+                >
+                @error('SDT')
+                    <small class="error-message">
+                        <i class="fa fa-exclamation-circle"></i> {{ $message }}
+                    </small>
+                @enderror
+            </div>
+
+            <button type="submit" class="btn-register-orange" id="registerButton">
+                <i class="fa fa-user-plus"></i> Đăng ký
+            </button>
         </form>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('registerForm');
+                const emailInput = document.querySelector('input[name="Email"]');
+                
+                // Kiểm tra email đã được xác thực trước khi submit
+                form?.addEventListener('submit', function(e) {
+                    if (emailInput && (!emailInput.value || !emailInput.hasAttribute('readonly'))) {
+                        e.preventDefault();
+                        alert('Vui lòng xác thực email trước khi đăng ký!');
+                        window.location.href = '{{ route("verification.email", ["type" => "register"]) }}';
+                        return false;
+                    }
+                });
+
+                // Real-time validation cho số điện thoại
+                const sdtInput = document.querySelector('input[name="SDT"]');
+                sdtInput?.addEventListener('input', function(e) {
+                    // Chỉ cho phép nhập số
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                });
+
+                // Real-time validation cho tên đăng nhập
+                const usernameInput = document.querySelector('input[name="TenDangNhap"]');
+                usernameInput?.addEventListener('input', function(e) {
+                    // Chỉ cho phép chữ, số và dấu gạch dưới
+                    e.target.value = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+                });
+            });
+        </script>
 
     </div>
     </div>

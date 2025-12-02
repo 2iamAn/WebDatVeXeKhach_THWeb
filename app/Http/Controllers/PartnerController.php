@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Contracts\View\View;
 use App\Models\ChuyenXe;
 use App\Models\Ghe;
 use App\Models\VeXe;
@@ -11,12 +13,23 @@ use App\Models\TuyenDuong;
 use App\Models\Xe;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class PartnerController extends Controller
 {
-    public function showRegisterForm()
+    public function showRegisterForm(): View|RedirectResponse
     {
+        // Kiểm tra email đã được xác thực chưa
+        $emailVerified = session('email_verified', false);
+        $verifiedEmail = session('verified_email');
+        
+        if (!$emailVerified || !$verifiedEmail) {
+            return redirect()->route('verification.email', ['type' => 'partner'])
+                ->with('info', 'Vui lòng xác thực email trước khi đăng ký hợp tác nhà xe.');
+        }
+        
         // Kiểm tra nếu có email trong request, hiển thị lý do từ chối nếu có
         $lyDoTuChoi = null;
         if (request()->has('email')) {
@@ -29,25 +42,100 @@ class PartnerController extends Controller
                 }
             }
         }
-        return view('partner.request', compact('lyDoTuChoi'));
+        
+        return view('partner.request', [
+            'lyDoTuChoi' => $lyDoTuChoi,
+            'verified_email' => $verifiedEmail,
+        ]);
     }
 
     public function sendRequest(Request $request)
     {
+        // Kiểm tra email đã được xác thực - Kiểm tra cả session và database
+        $emailVerified = session('email_verified', false);
+        $verifiedEmail = session('verified_email');
+        
+        // Nếu session không có, kiểm tra trong database
+        if (!$emailVerified || !$verifiedEmail) {
+            // Kiểm tra email từ request
+            $requestEmail = $request->input('Email');
+            if ($requestEmail) {
+                // Kiểm tra trong database xem email đã được verify chưa
+                $dbVerification = DB::table('email_verifications')
+                    ->where('email', $requestEmail)
+                    ->where('type', 'partner')
+                    ->where('verified', true)
+                    ->where('expires_at', '>', now())
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($dbVerification) {
+                    // Email đã được verify trong DB, khôi phục session
+                    session()->put('email_verified', true);
+                    session()->put('verified_email', $requestEmail);
+                    $emailVerified = true;
+                    $verifiedEmail = $requestEmail;
+                }
+            }
+        }
+        
+        if (!$emailVerified || !$verifiedEmail) {
+            return redirect()->route('verification.email', ['type' => 'partner'])
+                ->with('error', 'Vui lòng xác thực email trước khi đăng ký hợp tác.');
+        }
+
         $request->validate([
-            'TenNhaXe' => 'required|string|max:150',
-            'NguoiDaiDien' => 'required|string|max:100',
-            'Email' => 'required|email|max:100|unique:NguoiDung,Email',
-            'MatKhau' => 'required|string|min:6|confirmed',
-            'SDT' => 'required|string|max:15',
-            'DiaChi' => 'required|string|max:255',
+            'TenNhaXe' => 'required|string|max:150|min:2',
+            'NguoiDaiDien' => 'required|string|max:100|min:2',
+            'Email' => 'required|email|max:100|unique:nguoidung,Email',
+            'MatKhau' => 'required|string|min:6|max:255|confirmed',
+            'SDT' => 'required|string|max:15|min:10|regex:/^[0-9]+$/',
+            'DiaChi' => 'required|string|max:255|min:5',
             'MoTa' => 'nullable|string|max:255',
         ], [
+            // TenNhaXe
+            'TenNhaXe.required' => 'Vui lòng nhập tên nhà xe.',
+            'TenNhaXe.min' => 'Tên nhà xe phải có ít nhất 2 ký tự.',
+            'TenNhaXe.max' => 'Tên nhà xe không được vượt quá 150 ký tự.',
+            
+            // NguoiDaiDien
+            'NguoiDaiDien.required' => 'Vui lòng nhập tên người đại diện.',
+            'NguoiDaiDien.min' => 'Tên người đại diện phải có ít nhất 2 ký tự.',
+            'NguoiDaiDien.max' => 'Tên người đại diện không được vượt quá 100 ký tự.',
+            
+            // Email
+            'Email.required' => 'Vui lòng nhập email.',
+            'Email.email' => 'Email không hợp lệ. Vui lòng nhập đúng định dạng email.',
+            'Email.max' => 'Email không được vượt quá 100 ký tự.',
             'Email.unique' => 'Email này đã được sử dụng. Vui lòng chọn email khác.',
+            
+            // MatKhau
             'MatKhau.required' => 'Vui lòng nhập mật khẩu.',
             'MatKhau.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
-            'MatKhau.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'MatKhau.max' => 'Mật khẩu không được vượt quá 255 ký tự.',
+            'MatKhau.confirmed' => 'Xác nhận mật khẩu không khớp. Vui lòng nhập lại.',
+            
+            // SDT
+            'SDT.required' => 'Vui lòng nhập số điện thoại.',
+            'SDT.min' => 'Số điện thoại phải có ít nhất 10 chữ số.',
+            'SDT.max' => 'Số điện thoại không được vượt quá 15 chữ số.',
+            'SDT.regex' => 'Số điện thoại chỉ được chứa các chữ số (0-9).',
+            
+            // DiaChi
+            'DiaChi.required' => 'Vui lòng nhập địa chỉ trụ sở.',
+            'DiaChi.min' => 'Địa chỉ phải có ít nhất 5 ký tự.',
+            'DiaChi.max' => 'Địa chỉ không được vượt quá 255 ký tự.',
+            
+            // MoTa
+            'MoTa.max' => 'Mô tả không được vượt quá 255 ký tự.',
         ]);
+
+        // Kiểm tra email trong form phải khớp với email đã xác thực
+        if ($request->Email !== $verifiedEmail) {
+            return redirect()->back()
+                ->withErrors(['Email' => 'Email phải khớp với email đã xác thực: ' . $verifiedEmail])
+                ->withInput();
+        }
 
         // Kiểm tra email đã tồn tại chưa
         if (DB::table('nguoidung')->where('Email', $request->Email)->exists()) {
@@ -67,11 +155,11 @@ class PartnerController extends Controller
             $count++;
         }
 
-        // Lưu mật khẩu do nhà xe tự tạo (plain text)
+        // Hash mật khẩu trước khi lưu
         $maNguoiDung = DB::table('nguoidung')->insertGetId([
             'HoTen' => $request->NguoiDaiDien,
             'TenDangNhap' => $username,
-            'MatKhau' => $request->MatKhau,
+            'MatKhau' => Hash::make($request->MatKhau),
             'LoaiNguoiDung' => NguoiDung::ROLE_NHA_XE,
             'SDT' => $request->SDT,
             'Email' => $request->Email,
@@ -84,7 +172,23 @@ class PartnerController extends Controller
             'MoTa' => $request->MoTa ?: 'Đăng ký hợp tác',
         ]);
 
-        return redirect()->back()->with('success', 'Đã gửi yêu cầu hợp tác thành công! Sau khi được admin phê duyệt, bạn có thể đăng nhập bằng email và mật khẩu đã đăng ký.');
+        // Lưu thông tin đăng nhập vào session để tự động điền vào form đăng nhập
+        $loginEmail = $request->Email;
+        $loginPassword = $request->MatKhau;
+
+        // Xóa session verification sau khi đăng ký thành công
+        session()->forget(['email_verified', 'verified_email', 'verification_email', 'verification_type']);
+
+        // Lưu thông tin đăng nhập vào session
+        session([
+            'auto_login_email' => $loginEmail,
+            'auto_login_password' => $loginPassword,
+        ]);
+
+        return redirect()->route('login.form')
+            ->with('success', 'Đã gửi yêu cầu hợp tác thành công! Thông tin đăng nhập đã được điền sẵn. Lưu ý: Tài khoản của bạn cần được admin phê duyệt trước khi có thể đăng nhập.')
+            ->with('auto_fill', true)
+            ->with('pending_approval', true);
     }
 
     // Dashboard cho nhà xe
@@ -92,37 +196,44 @@ class PartnerController extends Controller
     {
         $maNhaXe = $this->ensurePartner();
 
-        // Tính toán thống kê
-        $tongChuyen = DB::table('chuyenxe')
-            ->where('MaNhaXe', $maNhaXe)
-            ->count();
+        // Cache thống kê trong 5 phút để tối ưu performance
+        $cacheKey = "partner_dashboard_{$maNhaXe}_" . now()->format('Y-m-d-H-i');
+        
+        $stats = Cache::remember($cacheKey, 300, function() use ($maNhaXe) {
+            // Tính toán thống kê với query tối ưu hơn
+            $tongChuyen = DB::table('chuyenxe')
+                ->where('MaNhaXe', $maNhaXe)
+                ->count();
 
-        $veDaBan = DB::table('vexe')
-            ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
-            ->where('chuyenxe.MaNhaXe', $maNhaXe)
-            ->count();
+            $veDaBan = DB::table('vexe')
+                ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
+                ->where('chuyenxe.MaNhaXe', $maNhaXe)
+                ->count();
 
-        $doanhThuNgay = DB::table('thanhtoan')
-            ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
-            ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
-            ->where('chuyenxe.MaNhaXe', $maNhaXe)
-            ->whereDate('thanhtoan.NgayThanhToan', now()->toDateString())
-            ->sum('thanhtoan.SoTien') ?? 0;
+            $doanhThuNgay = DB::table('thanhtoan')
+                ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
+                ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
+                ->where('chuyenxe.MaNhaXe', $maNhaXe)
+                ->whereDate('thanhtoan.NgayThanhToan', now()->toDateString())
+                ->sum('thanhtoan.SoTien') ?? 0;
 
-        $doanhThuThang = DB::table('thanhtoan')
-            ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
-            ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
-            ->where('chuyenxe.MaNhaXe', $maNhaXe)
-            ->whereYear('thanhtoan.NgayThanhToan', now()->year)
-            ->whereMonth('thanhtoan.NgayThanhToan', now()->month)
-            ->sum('thanhtoan.SoTien') ?? 0;
+            $doanhThuThang = DB::table('thanhtoan')
+                ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
+                ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
+                ->where('chuyenxe.MaNhaXe', $maNhaXe)
+                ->whereYear('thanhtoan.NgayThanhToan', now()->year)
+                ->whereMonth('thanhtoan.NgayThanhToan', now()->month)
+                ->sum('thanhtoan.SoTien') ?? 0;
 
-        return view('partner.dashboard', [
-            'tongChuyen' => $tongChuyen,
-            'veDaBan' => $veDaBan,
-            'doanhThuNgay' => $doanhThuNgay,
-            'doanhThuThang' => $doanhThuThang,
-        ]);
+            return [
+                'tongChuyen' => $tongChuyen,
+                'veDaBan' => $veDaBan,
+                'doanhThuNgay' => $doanhThuNgay,
+                'doanhThuThang' => $doanhThuThang,
+            ];
+        });
+
+        return view('partner.dashboard', $stats);
     }
     
 private function ensurePartner()
@@ -174,12 +285,12 @@ public function trips(Request $request)
             // Tính số ghế trống và đã đặt
             $tongGhe = $trip->ghe->count();
             
-            // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền") và đã thanh toán thành công
-            $gheDaDat = $trip->veXe->filter(function($ve) {
-                $trangThai = strtolower($ve->TrangThai ?? '');
-                return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien'])
-                    && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
-            })->count();
+            // Tối ưu: Sử dụng relationship đã load thay vì filter lại
+            $gheDaDat = $trip->veXe->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+                ->filter(function($ve) {
+                    return $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
+                })
+                ->count();
             
             // Nếu chưa có ghế nào trong bảng Ghe, lấy từ thông tin xe
             if ($tongGhe == 0 && $trip->xe && $trip->xe->SoGhe) {
@@ -337,12 +448,12 @@ public function seats(Request $request)
             $soGheChuyen = $chuyen->xe->SoGhe;
         }
         
-        // Chỉ đếm các vé hợp lệ (không phải "Hủy" hoặc "Hoàn tiền") và đã thanh toán thành công
-        $veDaDat = $chuyen->veXe->filter(function($ve) {
-            $trangThai = strtolower($ve->TrangThai ?? '');
-            return !in_array($trangThai, ['hủy', 'huy', 'hoàn tiền', 'hoan tien'])
-                && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
-        })->count();
+        // Tối ưu: Sử dụng relationship đã load
+        $veDaDat = $chuyen->veXe->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+            ->filter(function($ve) {
+                return $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success';
+            })
+            ->count();
         
         // Xử lý xe 34 chỗ
         if ($soGheChuyen == 34) {
@@ -574,29 +685,41 @@ public function updateTicketStatus(Request $request, $id)
     return redirect()->route('partner.tickets')->with('success', "Đã cập nhật trạng thái vé #{$ticket->MaVe} từ '{$oldStatus}' sang '{$request->TrangThai}'");
 }
 
-public function revenue()
-{
-    $maNhaXe = $this->ensurePartner();
+    public function revenue()
+    {
+        $maNhaXe = $this->ensurePartner();
 
-    $tongVe = VeXe::whereHas('chuyenXe', fn($q) => $q->where('MaNhaXe', $maNhaXe))->count();
+        // Cache revenue stats trong 5 phút
+        $cacheKey = "partner_revenue_{$maNhaXe}_" . now()->format('Y-m-d-H-i');
+        
+        $stats = Cache::remember($cacheKey, 300, function() use ($maNhaXe) {
+            $tongVe = VeXe::whereHas('chuyenXe', fn($q) => $q->where('MaNhaXe', $maNhaXe))->count();
 
-    $doanhThuNgay = DB::table('thanhtoan')
-        ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
-        ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
-        ->where('chuyenxe.MaNhaXe', $maNhaXe)
-        ->whereDate('thanhtoan.NgayThanhToan', now())
-        ->sum('thanhtoan.SoTien');
+            // Tối ưu: Sử dụng một query duy nhất với subquery
+            $doanhThuNgay = DB::table('thanhtoan')
+                ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
+                ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
+                ->where('chuyenxe.MaNhaXe', $maNhaXe)
+                ->whereDate('thanhtoan.NgayThanhToan', now())
+                ->sum('thanhtoan.SoTien');
 
-    $doanhThuThang = DB::table('thanhtoan')
-        ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
-        ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
-        ->where('chuyenxe.MaNhaXe', $maNhaXe)
-        ->whereYear('thanhtoan.NgayThanhToan', now()->year)
-        ->whereMonth('thanhtoan.NgayThanhToan', now()->month)
-        ->sum('thanhtoan.SoTien');
+            $doanhThuThang = DB::table('thanhtoan')
+                ->join('vexe', 'thanhtoan.MaVe', '=', 'vexe.MaVe')
+                ->join('chuyenxe', 'vexe.MaChuyenXe', '=', 'chuyenxe.MaChuyenXe')
+                ->where('chuyenxe.MaNhaXe', $maNhaXe)
+                ->whereYear('thanhtoan.NgayThanhToan', now()->year)
+                ->whereMonth('thanhtoan.NgayThanhToan', now()->month)
+                ->sum('thanhtoan.SoTien');
 
-    return view('partner.revenue', compact('doanhThuNgay', 'doanhThuThang', 'tongVe'));
-}
+            return [
+                'doanhThuNgay' => $doanhThuNgay ?? 0,
+                'doanhThuThang' => $doanhThuThang ?? 0,
+                'tongVe' => $tongVe,
+            ];
+        });
+
+        return view('partner.revenue', $stats);
+    }
 
 // Quản lý chuyến đi - CRUD
 public function createTrip()

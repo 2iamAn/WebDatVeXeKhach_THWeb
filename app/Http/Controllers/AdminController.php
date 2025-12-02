@@ -15,6 +15,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class AdminController extends Controller
 {
@@ -23,23 +24,30 @@ class AdminController extends Controller
     // ===========================
     public function dashboard(): View
     {
-        // Tối ưu: Sử dụng Eloquent và eager loading
-        $yeuCauChoDuyet = NhaXe::whereHas('nguoiDung', function($q) {
-            $q->where('TrangThai', 0)
-              ->where('LoaiNguoiDung', NguoiDung::ROLE_NHA_XE);
-        })->count();
+        // Cache thống kê trong 5 phút để tối ưu performance
+        $cacheKey = 'admin_dashboard_' . now()->format('Y-m-d-H-i');
+        
+        $stats = Cache::remember($cacheKey, 300, function() {
+            // Tối ưu: Sử dụng Eloquent và eager loading
+            $yeuCauChoDuyet = NhaXe::whereHas('nguoiDung', function($q) {
+                $q->where('TrangThai', 0)
+                  ->where('LoaiNguoiDung', NguoiDung::ROLE_NHA_XE);
+            })->count();
 
-        $tuyenChoDuyet = TuyenDuong::where('TrangThai', 'ChoDuyet')->count();
+            $tuyenChoDuyet = TuyenDuong::where('TrangThai', 'ChoDuyet')->count();
 
-        return view('admin.dashboard', [
-            'tongUser' => NguoiDung::where('LoaiNguoiDung', NguoiDung::ROLE_KHACH_HANG)->count(),
-            'tongNhaXe' => NhaXe::count(),
-            'tongVe' => VeXe::count(),
-            'tongChuyen' => ChuyenXe::count(),
-            'tongDoanhThu' => ThanhToan::sum('SoTien') ?? 0,
-            'yeuCauChoDuyet' => $yeuCauChoDuyet,
-            'tuyenChoDuyet' => $tuyenChoDuyet,
-        ]);
+            return [
+                'tongUser' => NguoiDung::where('LoaiNguoiDung', NguoiDung::ROLE_KHACH_HANG)->count(),
+                'tongNhaXe' => NhaXe::count(),
+                'tongVe' => VeXe::count(),
+                'tongChuyen' => ChuyenXe::count(),
+                'tongDoanhThu' => ThanhToan::sum('SoTien') ?? 0,
+                'yeuCauChoDuyet' => $yeuCauChoDuyet,
+                'tuyenChoDuyet' => $tuyenChoDuyet,
+            ];
+        });
+
+        return view('admin.dashboard', $stats);
     }
 
     // ===========================

@@ -48,4 +48,23 @@ class VeXe extends Model
     {
         return $this->belongsTo(Ghe::class, 'MaGhe', 'MaGhe');
     }
+
+    /**
+     * Scope để lấy các vé đã thanh toán thành công
+     */
+    public function scopeDaThanhToan($query)
+    {
+        return $query->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+            ->whereHas('thanhToan', function($q) {
+                $q->where('TrangThai', 'Success');
+            });
+    }
+
+    /**
+     * Scope để lấy các vé chưa hủy
+     */
+    public function scopeChuaHuy($query)
+    {
+        return $query->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien']);
+    }
 }

@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class DatVeController extends Controller
 {
@@ -21,24 +22,37 @@ class DatVeController extends Controller
         $chuyen = ChuyenXe::with(['nhaXe', 'tuyenDuong', 'ghe', 'xe'])->findOrFail($ma_chuyen);
         
         $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
-        // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
-        $soGheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-            ->whereHas('thanhToan', function($query) {
-                $query->where('TrangThai', 'Success');
-            })
-            ->count();
-        $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         
-        // Chỉ lấy ghế đã đặt từ vé đã thanh toán thành công
-        $gheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-            ->whereHas('thanhToan', function($query) {
-                $query->where('TrangThai', 'Success');
-            })
-            ->pluck('MaGhe')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
+        // Tối ưu: Cache thông tin ghế đã đặt trong 1 phút
+        $cacheKey = "ghe_da_dat_chuyen_{$ma_chuyen}";
+        $gheData = Cache::remember($cacheKey, 60, function() use ($ma_chuyen) {
+            // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
+            $soGheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
+                ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+                ->whereHas('thanhToan', function($query) {
+                    $query->where('TrangThai', 'Success');
+                })
+                ->count();
+            
+            // Chỉ lấy ghế đã đặt từ vé đã thanh toán thành công
+            $gheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
+                ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+                ->whereHas('thanhToan', function($query) {
+                    $query->where('TrangThai', 'Success');
+                })
+                ->pluck('MaGhe')
+                ->map(fn($id) => (int)$id)
+                ->toArray();
+            
+            return [
+                'soGheDaDat' => $soGheDaDat,
+                'gheDaDat' => $gheDaDat,
+            ];
+        });
+        
+        $soGheDaDat = $gheData['soGheDaDat'];
+        $soGheTrong = max(0, $tongGhe - $soGheDaDat);
+        $gheDaDat = $gheData['gheDaDat'];
         
         $tatCaGhe = $chuyen->ghe()->orderBy('SoGhe')->get();
         
@@ -102,12 +116,9 @@ class DatVeController extends Controller
                 ->withInput();
         }
 
-        // Chỉ lấy ghế đã đặt từ vé đã thanh toán thành công
+        // Tối ưu: Sử dụng scope mới
         $gheDaDat = VeXe::where('MaChuyenXe', $validated['MaChuyenXe'])
-            ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-            ->whereHas('thanhToan', function($query) {
-                $query->where('TrangThai', 'Success');
-            })
+            ->daThanhToan()
             ->pluck('MaGhe')
             ->toArray();
         
@@ -124,13 +135,8 @@ class DatVeController extends Controller
 
         $veXeList = [];
         foreach ($validated['MaGhe'] as $maGhe) {
-            // Kiểm tra ghế đã được đặt và thanh toán thành công
-            if (VeXe::where('MaGhe', $maGhe)
-                ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-                ->whereHas('thanhToan', function($query) {
-                    $query->where('TrangThai', 'Success');
-                })
-                ->exists()) {
+            // Tối ưu: Sử dụng scope mới
+            if (VeXe::where('MaGhe', $maGhe)->daThanhToan()->exists()) {
                 continue;
             }
             

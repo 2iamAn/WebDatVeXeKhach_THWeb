@@ -16,6 +16,9 @@ use App\Http\Controllers\AdminPartnerController;
 use App\Http\Controllers\DatVeController;
 use App\Http\Controllers\DanhGiaController;
 use App\Http\Controllers\ContactController;
+use App\Helpers\EmailHelper;
+use App\Http\Controllers\EmailVerificationController;
+
 // Trang chủ - đã được định nghĩa ở dưới
 // ===============================================
 // NGƯỜI DÙNG
@@ -168,12 +171,18 @@ Route::get('/', function () {
 
 // ===================== AUTH – ĐĂNG NHẬP / ĐĂNG KÝ =====================
 
+// Email Verification
+Route::get('/xac-thuc-email/{type?}', [EmailVerificationController::class, 'showEmailForm'])->name('verification.email');
+Route::post('/gui-ma-xac-thuc', [EmailVerificationController::class, 'sendCode'])->name('verification.send');
+Route::get('/nhap-ma-xac-thuc/{type?}', [EmailVerificationController::class, 'showVerifyForm'])->name('verification.verify.form');
+Route::post('/xac-thuc-ma', [EmailVerificationController::class, 'verifyCode'])->name('verification.verify');
+Route::post('/gui-lai-ma', [EmailVerificationController::class, 'resendCode'])->name('verification.resend');
+
 // Hiển thị form
 Route::get('/dang-ky', [AuthController::class, 'showRegister'])->name('register.form');
 Route::get('/dang-nhap', [AuthController::class, 'showLogin'])->name('login.form');
 
 // Xử lý submit
-
 Route::post('/dang-ky', [AuthController::class, 'register'])->name('register.process');
 Route::post('/dang-nhap', [AuthController::class, 'login'])->name('login.process');
 
@@ -274,3 +283,40 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Báo cáo
     Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
 });
+
+// ================= TEST EMAIL (Chỉ dùng để test trên InfinityFree) ===================
+Route::get('/test-email', function() {
+    $testEmail = request('email', 'your-test-email@gmail.com');
+    
+    try {
+        // Test 1: Gửi email đơn giản
+        $result1 = EmailHelper::send(
+            $testEmail,
+            'Test Email từ Laravel',
+            'Đây là email test từ hệ thống đặt vé xe khách trên InfinityFree!'
+        );
+        
+        // Test 2: Gửi email xác thực
+        $result2 = EmailHelper::sendVerification(
+            $testEmail,
+            '123456',
+            'Người dùng Test'
+        );
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Email đã được gửi!',
+            'tests' => [
+                'simple_email' => $result1 ? 'Thành công' : 'Thất bại',
+                'verification_email' => $result2 ? 'Thành công' : 'Thất bại'
+            ],
+            'note' => 'Kiểm tra hộp thư đến và spam của: ' . $testEmail
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : 'Hidden in production'
+        ], 500);
+    }
+})->name('test.email');
