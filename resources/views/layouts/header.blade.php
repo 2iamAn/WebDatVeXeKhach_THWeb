@@ -20,22 +20,32 @@
                     </li>
                     <li class="nav-item dropdown">
                         @php
+                            // Lấy tất cả tuyến có ít nhất 1 chuyến đang chạy
                             $allTuyens = \App\Models\TuyenDuong::with(['chuyenXe' => function($q) {
                                 $q->with('nhaXe');
                             }])->get();
 
+                            // Gom theo cặp (Điểm đi - Điểm đến) để không trùng lặp
+                            // Dùng lower + trim để tránh khác biệt do hoa/thường hoặc khoảng trắng
                             $tuyensDropdown = $allTuyens
                                 ->filter(function($tuyen) {
                                     return $tuyen->chuyenXe->count() > 0;
                                 })
                                 ->groupBy(function($tuyen) {
-                                    return $tuyen->DiemDi . '|' . $tuyen->DiemDen;
+                                    $diemDi = \Illuminate\Support\Str::lower(trim($tuyen->DiemDi));
+                                    $diemDen = \Illuminate\Support\Str::lower(trim($tuyen->DiemDen));
+                                    return $diemDi . '|' . $diemDen;
                                 })
                                 ->map(function($group) {
                                     return $group->first();
                                 })
-                                ->values()
-                                ->take(3);
+                                // Loại trùng thêm lần nữa dựa trên slug (bỏ dấu, chuẩn hóa khoảng trắng)
+                                ->unique(function($tuyen) {
+                                    return \Illuminate\Support\Str::slug($tuyen->DiemDi . '-' . $tuyen->DiemDen);
+                                })
+                                ->sortBy('DiemDi')
+                                ->sortBy('DiemDen')
+                                ->values();
                         @endphp
                         <a class="nav-link dropdown-toggle {{ request()->routeIs('tuyenduong.*') || request()->routeIs('chuyenxe.search') ? 'active' : '' }}"
                            href="#"
@@ -49,11 +59,10 @@
                             @if($tuyensDropdown->count() > 0)
                                 @foreach($tuyensDropdown as $tuyen)
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('chuyenxe.search', [
+                                        {{-- Khi nhấn tuyến, chuyển sang trang Tuyến đường với filter để hiển thị các nhà xe chạy tuyến đó --}}
+                                        <a class="dropdown-item" href="{{ route('tuyenduong.index', [
                                             'diem_di' => $tuyen->DiemDi,
                                             'diem_den' => $tuyen->DiemDen,
-                                            'ngay_khoi_hanh' => date('Y-m-d'),
-                                            'so_ghe' => 1
                                         ]) }}">
                                             <i class="fas fa-route me-2"></i>{{ $tuyen->DiemDi }} → {{ $tuyen->DiemDen }}
                                         </a>

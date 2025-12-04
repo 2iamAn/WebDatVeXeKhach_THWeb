@@ -202,21 +202,46 @@
             </div>
         @endif
 
+        @if(!$selectedChuyen && $selectedDate)
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Không có chuyến xe đã được phê duyệt</strong> trong ngày {{ \Carbon\Carbon::parse($selectedDate)->format('d/m/Y') }}.
+                <br>
+                <small>Sơ đồ ghế chỉ hiển thị khi chuyến xe đã được admin phê duyệt.</small>
+            </div>
+        @endif
+
+        @if($selectedChuyen)
         <!-- Radio buttons để chọn số chỗ -->
         <div class="mb-4">
             <div class="btn-group" role="group" aria-label="Số chỗ">
                 <input type="radio" class="btn-check" name="soCho" id="cho34" value="34" checked autocomplete="off" onchange="changeSeatType('34')">
                 <label class="btn btn-outline-success" for="cho34">
-                    <i class="fas fa-bus me-2"></i>Xe 34 chỗ
+                    <i class="fas fa-bus me-2"></i>Xe Limousine 34 chỗ
                 </label>
 
-                <input type="radio" class="btn-check" name="soCho" id="cho41" value="41" autocomplete="off" onchange="changeSeatType('41')">
-                <label class="btn btn-outline-success" for="cho41">
-                    <i class="fas fa-bus me-2"></i>Xe 41 chỗ
+                <input type="radio" class="btn-check" name="soCho" id="cho42" value="42" autocomplete="off" onchange="changeSeatType('42')">
+                <label class="btn btn-outline-success" for="cho42">
+                    <i class="fas fa-bus me-2"></i>Xe thường 42 chỗ
                 </label>
             </div>
         </div>
 
+        <!-- Tab chuyển đổi tầng -->
+        <div class="mb-3">
+            <div class="btn-group" role="group" aria-label="Chọn tầng">
+                <input type="radio" class="btn-check" name="floorSelect" id="floor1" value="1" checked autocomplete="off" onchange="switchFloor(1)">
+                <label class="btn btn-outline-primary" for="floor1">
+                    <i class="fas fa-layer-group me-2"></i>Tầng 1
+                </label>
+                
+                <input type="radio" class="btn-check" name="floorSelect" id="floor2" value="2" autocomplete="off" onchange="switchFloor(2)">
+                <label class="btn btn-outline-primary" for="floor2">
+                    <i class="fas fa-layer-group me-2"></i>Tầng 2
+                </label>
+            </div>
+        </div>
+        
         <!-- Sơ đồ ghế -->
         <div id="seatMapContainer">
             <!-- Sẽ được render bởi JavaScript -->
@@ -285,6 +310,7 @@
                 </div>
             </div>
         </div>
+        @endif
 
     </div>
 </div>
@@ -653,38 +679,40 @@ const seatLayouts = {
             [['B17'], [], ['B16']]
         ]
     },
-    '41': {
+    '42': {
+        // Xe thường: 21 ghế tầng trên, 21 ghế tầng dưới
+        // Layout 3 cột: trái, giữa, phải (7 hàng x 3 ghế = 21 ghế)
         floor1: [
-            // Hàng 1: A1 (phải), B1 (giữa), C1 (trái)
-            [['C1'], ['B1'], ['A1']],
-            // Hàng 2: A2 (phải), B2 (giữa), C2 (trái)
-            [['C2'], ['B2'], ['A2']],
-            // Hàng 3: A3 (phải), B3 (giữa), C3 (trái)
-            [['C3'], ['B3'], ['A3']],
-            // Hàng 4: A4 (phải), B4 (giữa), C4 (trái)
-            [['C4'], ['B4'], ['A4']],
-            // Hàng 5: A5 (phải), B5 (giữa), C5 (trái)
-            [['C5'], ['B5'], ['A5']],
-            // Hàng 6: A6 (phải), B6 (giữa), C6 (trái)
-            [['C6'], ['B6'], ['A6']],
-            // Hàng cuối: 5 ghế A7
-            [['A7', 'A7', 'A7', 'A7', 'A7']]
+            // Hàng 1: A01 (phải), A02 (giữa), A03 (trái)
+            [['A03'], ['A02'], ['A01']],
+            // Hàng 2: A04 (phải), A05 (giữa), A06 (trái)
+            [['A06'], ['A05'], ['A04']],
+            // Hàng 3: A07 (phải), A08 (giữa), A09 (trái)
+            [['A09'], ['A08'], ['A07']],
+            // Hàng 4: A10 (phải), A11 (giữa), A12 (trái)
+            [['A12'], ['A11'], ['A10']],
+            // Hàng 5: A13 (phải), A14 (giữa), A15 (trái)
+            [['A15'], ['A14'], ['A13']],
+            // Hàng 6: A16 (phải), A17 (giữa), A18 (trái)
+            [['A18'], ['A17'], ['A16']],
+            // Hàng 7: A19 (phải), A20 (giữa), A21 (trái)
+            [['A21'], ['A20'], ['A19']]
         ],
         floor2: [
-            // Hàng 1: AA1 (phải), BB1 (giữa), CC1 (trái)
-            [['CC1'], ['BB1'], ['AA1']],
-            // Hàng 2: AA2 (phải), BB2 (giữa), CC2 (trái)
-            [['CC2'], ['BB2'], ['AA2']],
-            // Hàng 3: AA3 (phải), BB3 (giữa), CC3 (trái)
-            [['CC3'], ['BB3'], ['AA3']],
-            // Hàng 4: AA4 (phải), BB4 (giữa), CC4 (trái)
-            [['CC4'], ['BB4'], ['AA4']],
-            // Hàng 5: AA5 (phải), BB5 (giữa), CC5 (trái)
-            [['CC5'], ['BB5'], ['AA5']],
-            // Hàng 6: AA6 (phải), BB6 (giữa), CC6 (trái)
-            [['CC6'], ['BB6'], ['AA6']],
-            // Hàng cuối: 5 ghế AA7
-            [['AA7', 'AA7', 'AA7', 'AA7', 'AA7']]
+            // Hàng 1: B01 (phải), B02 (giữa), B03 (trái)
+            [['B03'], ['B02'], ['B01']],
+            // Hàng 2: B04 (phải), B05 (giữa), B06 (trái)
+            [['B06'], ['B05'], ['B04']],
+            // Hàng 3: B07 (phải), B08 (giữa), B09 (trái)
+            [['B09'], ['B08'], ['B07']],
+            // Hàng 4: B10 (phải), B11 (giữa), B12 (trái)
+            [['B12'], ['B11'], ['B10']],
+            // Hàng 5: B13 (phải), B14 (giữa), B15 (trái)
+            [['B15'], ['B14'], ['B13']],
+            // Hàng 6: B16 (phải), B17 (giữa), B18 (trái)
+            [['B18'], ['B17'], ['B16']],
+            // Hàng 7: B19 (phải), B20 (giữa), B21 (trái)
+            [['B21'], ['B20'], ['B19']]
         ]
     }
 };
@@ -1145,70 +1173,83 @@ function showLockedSeatOptions(soGhe, maGhe) {
     }
 }
 
+// Biến lưu tầng hiện tại (1 hoặc 2)
+let currentFloor = 1;
+
+function switchFloor(floor) {
+    currentFloor = floor;
+    // Lấy loại xe hiện tại từ radio button
+    const selectedType = document.querySelector('input[name="soCho"]:checked')?.value || '34';
+    renderSeatMap(selectedType);
+}
+
 function renderSeatMap(type) {
     const layout = seatLayouts[type];
     const container = document.getElementById('seatMapContainer');
     
     let html = '<div class="seat-map-wrapper">';
     
-    // Tầng 1
-    html += '<div class="floor-container">';
-    html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 1</div>';
-    html += '<div class="driver-seat"><i class="fas fa-steering-wheel"></i></div>';
-    
-    layout.floor1.forEach(row => {
-        html += '<div class="seat-row">';
-        // Nếu là hàng cuối (mảng 1 phần tử)
-        if (row.length === 1 && row[0].length > 1) {
-            row[0].forEach(soGhe => {
-                html += renderSeat(soGhe);
-            });
-        } else {
-            // Hàng có 3 cột: trái, giữa, phải
-            row.forEach((column, colIndex) => {
-                if (column && column.length > 0) {
-                    column.forEach(soGhe => {
-                        html += renderSeat(soGhe);
-                    });
-                }
-                // Thêm lối đi giữa các cột (trừ cột cuối)
-                if (colIndex < row.length - 1) {
-                    html += '<div class="aisle"></div>';
-                }
-            });
-        }
+    // Chỉ hiển thị tầng được chọn
+    if (currentFloor === 1) {
+        // Tầng 1
+        html += '<div class="floor-container">';
+        html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 1</div>';
+        html += '<div class="driver-seat"><i class="fas fa-steering-wheel"></i></div>';
+        
+        layout.floor1.forEach(row => {
+            html += '<div class="seat-row">';
+            // Nếu là hàng cuối (mảng 1 phần tử)
+            if (row.length === 1 && row[0].length > 1) {
+                row[0].forEach(soGhe => {
+                    html += renderSeat(soGhe);
+                });
+            } else {
+                // Hàng có 3 cột: trái, giữa, phải
+                row.forEach((column, colIndex) => {
+                    if (column && column.length > 0) {
+                        column.forEach(soGhe => {
+                            html += renderSeat(soGhe);
+                        });
+                    }
+                    // Thêm lối đi giữa các cột (trừ cột cuối)
+                    if (colIndex < row.length - 1) {
+                        html += '<div class="aisle"></div>';
+                    }
+                });
+            }
+            html += '</div>';
+        });
         html += '</div>';
-    });
-    html += '</div>';
-    
-    // Tầng 2
-    html += '<div class="floor-container">';
-    html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 2</div>';
-    
-    layout.floor2.forEach(row => {
-        html += '<div class="seat-row">';
-        // Nếu là hàng cuối (mảng 1 phần tử)
-        if (row.length === 1 && row[0].length > 1) {
-            row[0].forEach(soGhe => {
-                html += renderSeat(soGhe);
-            });
-        } else {
-            // Hàng có 3 cột: trái, giữa, phải
-            row.forEach((column, colIndex) => {
-                if (column && column.length > 0) {
-                    column.forEach(soGhe => {
-                        html += renderSeat(soGhe);
-                    });
-                }
-                // Thêm lối đi giữa các cột (trừ cột cuối)
-                if (colIndex < row.length - 1) {
-                    html += '<div class="aisle"></div>';
-                }
-            });
-        }
+    } else {
+        // Tầng 2
+        html += '<div class="floor-container">';
+        html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 2</div>';
+        
+        layout.floor2.forEach(row => {
+            html += '<div class="seat-row">';
+            // Nếu là hàng cuối (mảng 1 phần tử)
+            if (row.length === 1 && row[0].length > 1) {
+                row[0].forEach(soGhe => {
+                    html += renderSeat(soGhe);
+                });
+            } else {
+                // Hàng có 3 cột: trái, giữa, phải
+                row.forEach((column, colIndex) => {
+                    if (column && column.length > 0) {
+                        column.forEach(soGhe => {
+                            html += renderSeat(soGhe);
+                        });
+                    }
+                    // Thêm lối đi giữa các cột (trừ cột cuối)
+                    if (colIndex < row.length - 1) {
+                        html += '<div class="aisle"></div>';
+                    }
+                });
+            }
+            html += '</div>';
+        });
         html += '</div>';
-    });
-    html += '</div>';
+    }
     
     html += '</div>';
     
@@ -1275,17 +1316,35 @@ const chuyen41Data = @json($chuyen41 ? [
 ] : null);
 
 function changeSeatType(type) {
+    // Reset về tầng 1 khi chuyển loại xe
+    currentFloor = 1;
+    document.getElementById('floor1').checked = true;
+    document.getElementById('floor2').checked = false;
+    
     renderSeatMap(type);
     updateStatsBySeatType(type);
     updateBusInfo(type);
 }
+
+// Dữ liệu chuyến xe 42 chỗ cho bus info
+const chuyen42InfoData = @json($selectedChuyen && $selectedChuyen->xe && $selectedChuyen->xe->SoGhe == 42 ? [
+    'bienSoXe' => $selectedChuyen->xe->BienSoXe ?? null,
+    'soGhe' => $selectedChuyen->xe->SoGhe ?? null
+] : null);
 
 function updateBusInfo(type) {
     const busInfoElement = document.getElementById('busInfo');
     if (!busInfoElement) return;
     
     let busInfo = '---';
-    const chuyenData = type === '34' ? chuyen34Data : chuyen41Data;
+    let chuyenData = null;
+    
+    if (type === '34') {
+        chuyenData = chuyen34Data;
+    } else {
+        // Xe 41-42 chỗ đều dùng layout 42
+        chuyenData = chuyen42InfoData;
+    }
     
     if (chuyenData) {
         if (chuyenData.bienSoXe) {
@@ -1301,6 +1360,24 @@ function updateBusInfo(type) {
     busInfoElement.textContent = busInfo;
 }
 
+// Dữ liệu chuyến xe 42 chỗ từ server
+@php
+    $chuyen42DataArray = null;
+    if ($selectedChuyen && $selectedChuyen->xe && $selectedChuyen->xe->SoGhe == 42) {
+        $tongGhe42 = $selectedChuyen->ghe->count() > 0 ? $selectedChuyen->ghe->count() : ($selectedChuyen->xe->SoGhe ?? 42);
+        $soGheDaDat42 = $selectedChuyen->veXe->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+            ->filter(function($ve) { 
+                return $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success'; 
+            })
+            ->count() ?? 0;
+        $chuyen42DataArray = [
+            'tongGhe' => $tongGhe42,
+            'soGheDaDat' => $soGheDaDat42
+        ];
+    }
+@endphp
+const chuyen42Data = @json($chuyen42DataArray);
+
 function updateStatsBySeatType(type) {
     // Sử dụng dữ liệu từ server
     const tongGhe34 = {{ $tongGhe34 ?? 0 }};
@@ -1315,9 +1392,18 @@ function updateStatsBySeatType(type) {
         bookedSeats = soGheDaDat34;
         emptySeats = tongGhe34 - soGheDaDat34;
     } else {
-        totalSeats = tongGhe41;
-        bookedSeats = soGheDaDat41;
-        emptySeats = tongGhe41 - soGheDaDat41;
+        // Xe 41-42 chỗ đều dùng layout 42
+        // Tính toán từ ghế thực tế của chuyến được chọn
+        if (chuyen42Data) {
+            totalSeats = chuyen42Data.tongGhe || 42;
+            bookedSeats = chuyen42Data.soGheDaDat || 0;
+            emptySeats = totalSeats - bookedSeats;
+        } else {
+            // Fallback: sử dụng giá trị mặc định
+            totalSeats = 42;
+            bookedSeats = 0;
+            emptySeats = 42;
+        }
     }
     
     // Cập nhật số liệu thống kê
@@ -1477,7 +1563,22 @@ function submitSellDirect(event, soGhe, maGhe) {
 
 // Khởi tạo với loại xe mặc định
 document.addEventListener('DOMContentLoaded', function() {
-    renderSeatMap('34');
+    // Tự động xác định loại xe từ chuyến được chọn
+    let defaultType = '34';
+    @if($selectedChuyen && $selectedChuyen->xe && $selectedChuyen->xe->SoGhe)
+        const selectedSoGhe = {{ $selectedChuyen->xe->SoGhe }};
+        if (selectedSoGhe == 42 || selectedSoGhe == 41) {
+            // Xe 41-42 chỗ đều dùng layout 42
+            defaultType = '42';
+            document.getElementById('cho42').checked = true;
+        } else {
+            document.getElementById('cho34').checked = true;
+        }
+    @endif
+    
+    renderSeatMap(defaultType);
+    updateStatsBySeatType(defaultType);
+    updateBusInfo(defaultType);
     updateStatsBySeatType('34');
     updateBusInfo('34');
 });

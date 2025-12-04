@@ -95,10 +95,8 @@ class ChuyenXeController extends Controller
             'ngay_khoi_hanh' => 'required|date',
             'so_ghe' => 'required|integer|min:1',
         ]);
-
         $diemDi = trim($validated['diem_di']);
         $diemDen = trim($validated['diem_den']);
-        
         // Tối ưu: Tìm tuyến đường phù hợp với index hỗ trợ
         $tuyenIds = TuyenDuong::where(function($q) use ($diemDi, $diemDen) {
                 $q->where('DiemDi', $diemDi)

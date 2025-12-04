@@ -37,7 +37,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                                    <h5 class="mb-1">Chuyến xe #{{ $trip->MaChuyenXe }}</h5>
+                                    <h5 class="mb-1">Chuyến xe {{ $trip->MaChuyenXe }}</h5>
                                     <span class="badge bg-warning badge-custom">
                                         <i class="fas fa-clock me-1"></i> Chờ duyệt
                             </span>

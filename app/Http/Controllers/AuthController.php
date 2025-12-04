@@ -11,7 +11,6 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -158,7 +157,7 @@ class AuthController extends Controller
                 'SDT' => $validated['SDT'],
                 'Email' => $validated['Email'],
                 'LoaiNguoiDung' => NguoiDung::ROLE_KHACH_HANG,
-                'MatKhau' => Hash::make($validated['MatKhau']),
+                'MatKhau' => $validated['MatKhau'],
                 'TrangThai' => 1,
             ]);
             
@@ -226,7 +225,7 @@ class AuthController extends Controller
             ->orWhere('Email', $credentials['TenDangNhap'])
             ->first();
 
-        if (!$user || !Hash::check($credentials['MatKhau'], $user->MatKhau)) {
+        if (!$user || $credentials['MatKhau'] !== $user->MatKhau) {
             throw ValidationException::withMessages([
                 'login_error' => 'Tên đăng nhập/Email hoặc mật khẩu không đúng'
             ]);

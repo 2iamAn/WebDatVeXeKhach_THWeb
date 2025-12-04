@@ -14,7 +14,6 @@ use App\Models\Xe;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class PartnerController extends Controller
@@ -155,11 +154,10 @@ class PartnerController extends Controller
             $count++;
         }
 
-        // Hash mật khẩu trước khi lưu
         $maNguoiDung = DB::table('nguoidung')->insertGetId([
             'HoTen' => $request->NguoiDaiDien,
             'TenDangNhap' => $username,
-            'MatKhau' => Hash::make($request->MatKhau),
+            'MatKhau' => $request->MatKhau,
             'LoaiNguoiDung' => NguoiDung::ROLE_NHA_XE,
             'SDT' => $request->SDT,
             'Email' => $request->Email,
@@ -329,22 +327,24 @@ public function seats(Request $request)
     $selectedDate = $request->date ?? now()->toDateString();
     $selectedMonth = $request->month ?? now()->format('Y-m');
 
-    // Lấy các chuyến xe trong ngày được chọn
+    // Lấy các chuyến xe đã được phê duyệt trong ngày được chọn
     $chuyens = ChuyenXe::with(['xe', 'ghe', 'veXe'])
         ->where('MaNhaXe', $maNhaXe)
         ->whereDate('GioKhoiHanh', $selectedDate)
+        ->where('TrangThai', 'DaDuyet')
         ->get();
 
-    // Lấy chuyến xe được chọn (nếu có) - cần lấy sớm để lọc dữ liệu
+    // Lấy chuyến xe được chọn (nếu có) - chỉ lấy chuyến đã được phê duyệt
     $selectedChuyenId = $request->chuyen_id;
     $selectedChuyen = null;
     if ($selectedChuyenId) {
         $selectedChuyen = ChuyenXe::with(['tuyenDuong', 'nhaXe', 'xe'])
             ->where('MaNhaXe', $maNhaXe)
             ->where('MaChuyenXe', $selectedChuyenId)
+            ->where('TrangThai', 'DaDuyet')
             ->first();
     } elseif ($chuyens->count() > 0) {
-        // Nếu không chọn chuyến cụ thể, lấy chuyến đầu tiên
+        // Nếu không chọn chuyến cụ thể, lấy chuyến đầu tiên (đã được filter là DaDuyet)
         $selectedChuyen = $chuyens->first();
         $selectedChuyen->load(['tuyenDuong', 'nhaXe', 'xe']);
     }
@@ -355,6 +355,7 @@ public function seats(Request $request)
     if ($maChuyenXeSelected) {
         // Lấy thông tin chi tiết vé và người đặt cho mỗi ghế CỦA CHUYẾN ĐƯỢC CHỌN
         // Chỉ lấy vé đã thanh toán thành công
+        // Logic này phải giống hệt với DatVeController để đảm bảo đồng bộ
         $veXeInfo = VeXe::with(['nguoiDung', 'ghe', 'chuyenXe', 'thanhToan'])
             ->where('MaChuyenXe', $maChuyenXeSelected)
             ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
@@ -363,7 +364,14 @@ public function seats(Request $request)
             })
             ->get();
         
-        $gheDaDat = $veXeInfo->pluck('MaGhe')->toArray();
+        $gheDaDat = $veXeInfo->pluck('MaGhe')->map(fn($id) => (int)$id)->unique()->toArray();
+        
+        // Debug log để kiểm tra
+        \Log::info('PartnerController - Ghế đã đặt', [
+            'ma_chuyen' => $maChuyenXeSelected,
+            'soGheDaDat' => count($gheDaDat),
+            'gheDaDat' => $gheDaDat,
+        ]);
         
         // Tạo map veXeInfo với key là MaGhe
         $veXeInfoMap = $veXeInfo->mapWithKeys(function($ve) {
@@ -525,8 +533,9 @@ public function seats(Request $request)
     // Lấy danh sách ghế đã được đặt (từ bảng VeXe) - đã lấy ở trên
     // $gheDaDat đã được định nghĩa ở trên
 
-    // Lấy danh sách các ngày có chuyến trong tháng
+    // Lấy danh sách các ngày có chuyến đã được phê duyệt trong tháng
     $daysWithTrips = \App\Models\ChuyenXe::where('MaNhaXe', $maNhaXe)
+        ->where('TrangThai', 'DaDuyet')
         ->whereYear('GioKhoiHanh', substr($selectedMonth, 0, 4))
         ->whereMonth('GioKhoiHanh', substr($selectedMonth, 5, 2))
         ->selectRaw('DATE(GioKhoiHanh) as date, COUNT(*) as count')
@@ -725,9 +734,12 @@ public function updateTicketStatus(Request $request, $id)
 public function createTrip()
 {
     $maNhaXe = $this->ensurePartner();
-    $tuyens = TuyenDuong::whereHas('chuyenXe', function($query) use ($maNhaXe) {
-        $query->where('MaNhaXe', $maNhaXe);
-    })->orWhereDoesntHave('chuyenXe')->orderBy('DiemDi')->orderBy('DiemDen')->get();
+    // Chỉ lấy các tuyến đường đã được admin phê duyệt của nhà xe này
+    $tuyens = TuyenDuong::where('MaNhaXe', $maNhaXe)
+        ->where('TrangThai', 'DaDuyet')
+        ->orderBy('DiemDi')
+        ->orderBy('DiemDen')
+        ->get();
     $xes = Xe::where('MaNhaXe', $maNhaXe)->get();
     
     // Lấy tên nhà xe
@@ -752,15 +764,10 @@ public function storeTrip(Request $request)
         'GiaVe' => 'required|numeric|min:0',
     ]);
 
-    // Kiểm tra tuyến đường thuộc về nhà xe này hoặc chưa được sử dụng
-    $tuyen = TuyenDuong::findOrFail($request->MaTuyen);
-    $tuyenUsedByOther = ChuyenXe::where('MaTuyen', $tuyen->MaTuyen)
-        ->where('MaNhaXe', '!=', $maNhaXe)
-        ->exists();
-    
-    if ($tuyenUsedByOther) {
-        return redirect()->back()->with('error', 'Tuyến đường này đã được nhà xe khác sử dụng!');
-    }
+    // Kiểm tra tuyến đường thuộc về nhà xe này
+    $tuyen = TuyenDuong::where('MaTuyen', $request->MaTuyen)
+        ->where('MaNhaXe', $maNhaXe)
+        ->firstOrFail();
 
     // Kiểm tra xe thuộc về nhà xe này
     if ($request->MaXe) {
@@ -792,9 +799,12 @@ public function editTrip($id)
         ->where('MaNhaXe', $maNhaXe)
         ->firstOrFail();
     
-    $tuyens = TuyenDuong::whereHas('chuyenXe', function($query) use ($maNhaXe) {
-        $query->where('MaNhaXe', $maNhaXe);
-    })->orWhereDoesntHave('chuyenXe')->orderBy('DiemDi')->orderBy('DiemDen')->get();
+    // Chỉ lấy các tuyến đường đã được admin phê duyệt của nhà xe này
+    $tuyens = TuyenDuong::where('MaNhaXe', $maNhaXe)
+        ->where('TrangThai', 'DaDuyet')
+        ->orderBy('DiemDi')
+        ->orderBy('DiemDen')
+        ->get();
     $xes = Xe::where('MaNhaXe', $maNhaXe)->get();
     
     // Lấy tên nhà xe
@@ -822,16 +832,10 @@ public function updateTrip(Request $request, $id)
         'GiaVe' => 'required|numeric|min:0',
     ]);
 
-    // Kiểm tra tuyến đường
-    $tuyen = TuyenDuong::findOrFail($request->MaTuyen);
-    $tuyenUsedByOther = ChuyenXe::where('MaTuyen', $tuyen->MaTuyen)
-        ->where('MaNhaXe', '!=', $maNhaXe)
-        ->where('MaChuyenXe', '!=', $id)
-        ->exists();
-    
-    if ($tuyenUsedByOther) {
-        return redirect()->back()->with('error', 'Tuyến đường này đã được nhà xe khác sử dụng!');
-    }
+    // Kiểm tra tuyến đường thuộc về nhà xe này
+    $tuyen = TuyenDuong::where('MaTuyen', $request->MaTuyen)
+        ->where('MaNhaXe', $maNhaXe)
+        ->firstOrFail();
 
     // Kiểm tra xe thuộc về nhà xe này
     if ($request->MaXe) {

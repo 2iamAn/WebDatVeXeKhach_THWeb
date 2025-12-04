@@ -101,7 +101,7 @@
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mt-4">
-                                <a href="{{ route('vexe.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('datve.create', $veXe->MaChuyenXe) }}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left me-2"></i>Quay lại
                                 </a>
                                 <button type="submit" class="btn btn-success btn-lg">

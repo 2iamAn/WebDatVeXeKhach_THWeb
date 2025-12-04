@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Hash;
 
 class NguoiDungController extends Controller
 {
@@ -34,9 +33,7 @@ class NguoiDungController extends Controller
             'TrangThai' => ['nullable', 'integer', Rule::in([0, 1])],
         ]);
 
-        // Hash mật khẩu trước khi lưu
         $validated['TrangThai'] = $validated['TrangThai'] ?? 1;
-        $validated['MatKhau'] = Hash::make($validated['MatKhau']);
 
         NguoiDung::create($validated);
         return redirect()->route('nguoidung.index')->with('success', 'Thêm người dùng thành công!');
@@ -67,7 +64,7 @@ class NguoiDungController extends Controller
         $validated['TrangThai'] = $validated['TrangThai'] ?? $nguoidung->TrangThai;
 
         if ($request->filled('MatKhau')) {
-            $validated['MatKhau'] = Hash::make($request->MatKhau);
+            $validated['MatKhau'] = $request->MatKhau;
         }
 
         $nguoidung->update($validated);

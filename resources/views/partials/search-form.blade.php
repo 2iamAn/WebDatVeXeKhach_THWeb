@@ -38,7 +38,7 @@
       <label>Ngày khởi hành</label>
       <div class="input-icon">
         <img src="{{ asset('image/lich.png') }}">
-        <input type="date" id="ngaydi">
+        <input type="date" id="ngaydi" min="{{ date('Y-m-d') }}">
       </div>
     </div>
 
@@ -46,7 +46,7 @@
       <label>Ngày về</label>
       <div class="input-icon">
         <img src="{{ asset('image/lich.png') }}">
-        <input type="date" id="ngayve">
+        <input type="date" id="ngayve" min="{{ date('Y-m-d') }}">
       </div>
     </div>
 

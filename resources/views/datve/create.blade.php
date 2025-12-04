@@ -62,12 +62,17 @@
                                     <!-- Chọn số lượng ghế -->
                                     <div class="mb-3">
                                         <label class="form-label fw-bold">Số lượng ghế <span class="text-danger">*</span></label>
-                                        <select id="soLuongGhe" class="form-select" style="max-width: 200px;" onchange="updateSeatSelection()">
-                                            <option value="1">1 ghế</option>
-                                            @for($i = 2; $i <= min(10, $soGheTrong); $i++)
-                                                <option value="{{ $i }}">{{ $i }} ghế</option>
-                                            @endfor
-                                        </select>
+                                        <div style="max-width: 200px;">
+                                            <input
+                                                id="soLuongGhe"
+                                                type="number"
+                                                class="form-control"
+                                                value="1"
+                                                min="1"
+                                                max="{{ min(10, $soGheTrong) }}"
+                                                oninput="if (this.value < 1) this.value = 1; if (this.value > {{ min(10, $soGheTrong) }}) this.value = {{ min(10, $soGheTrong) }}; updateSeatSelection();"
+                                            >
+                                        </div>
                                         <small class="text-muted">Bạn có thể chọn tối đa {{ min(10, $soGheTrong) }} ghế</small>
                                     </div>
                                     
@@ -78,6 +83,21 @@
                                     <div id="selectedSeatInfo" class="alert alert-info mb-3" style="display: none;">
                                         <i class="fas fa-check-circle me-2"></i>    
                                         Bạn đã chọn: <strong id="selectedSeatNames"></strong>
+                                    </div>
+                                    
+                                    <!-- Tab chuyển đổi tầng -->
+                                    <div class="mb-3">
+                                        <div class="btn-group" role="group" aria-label="Chọn tầng">
+                                            <input type="radio" class="btn-check" name="floorSelect" id="floor1" value="1" checked autocomplete="off" onchange="switchFloor(1)">
+                                            <label class="btn btn-outline-primary" for="floor1">
+                                                <i class="fas fa-layer-group me-2"></i>Tầng 1
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="floorSelect" id="floor2" value="2" autocomplete="off" onchange="switchFloor(2)">
+                                            <label class="btn btn-outline-primary" for="floor2">
+                                                <i class="fas fa-layer-group me-2"></i>Tầng 2
+                                            </label>
+                                        </div>
                                     </div>
                                     
                                     <!-- Sơ đồ ghế -->
@@ -165,12 +185,28 @@
 
 @if($coGheTrong && $gheTrong->count() > 0)
 @php
-    // Chuẩn bị dữ liệu ghế cho JavaScript - bao gồm cả ghế trống và ghế đã đặt
-    // Đảm bảo $gheDaDat là mảng integer
+    // Chuẩn bảo dữ liệu ghế cho JavaScript - CHỈ tính ghế từ vé đã thanh toán thành công
+    // Đảm bảo $gheDaDat chỉ chứa ghế từ vé đã thanh toán (đã được verify trong controller)
     $gheDaDatInt = array_map('intval', $gheDaDat ?? []);
+    
+    // Kiểm tra lại để đảm bảo chỉ có ghế từ vé đã thanh toán
+    // (Double check trong view để chắc chắn)
+    $gheDaDatVerified = \App\Models\VeXe::where('MaChuyenXe', $chuyen->MaChuyenXe ?? 0)
+        ->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
+        ->whereHas('thanhToan', function($q) {
+            $q->where('TrangThai', 'Success');
+        })
+        ->pluck('MaGhe')
+        ->map(fn($id) => (int)$id)
+        ->unique()
+        ->toArray();
+    
+    // Sử dụng dữ liệu đã verify (BỎ QUA $gheDaDat từ controller, lấy trực tiếp từ DB)
+    $gheDaDatInt = array_map('intval', $gheDaDatVerified);
     
     $gheDataArray = ($tatCaGhe ?? collect())->map(function($g) use ($gheDaDatInt) {
         $maGheInt = (int)$g->MaGhe;
+        // CHỈ đánh dấu là "đã đặt" nếu ghế có trong danh sách vé đã thanh toán thành công
         $isBooked = in_array($maGheInt, $gheDaDatInt, true); // Sử dụng strict comparison
         return [
             'maGhe' => $maGheInt,
@@ -183,19 +219,32 @@
     // Debug: Log để kiểm tra
     \Log::info('DatVe Create - Debug Info', [
         'ma_chuyen' => $chuyen->MaChuyenXe ?? null,
+        'gheDaDat_from_controller' => count($gheDaDat ?? []),
+        'gheDaDat_verified_in_view' => count($gheDaDatVerified),
         'gheDaDatInt' => $gheDaDatInt,
         'tatCaGhe_count' => $tatCaGhe->count() ?? 0,
         'gheDataArray_count' => count($gheDataArray),
-        'gheDataArray_sample' => array_slice($gheDataArray, 0, 10),
+        'gheDataArray_booked_count' => count(array_filter($gheDataArray, function($g) { return $g['isBooked']; })),
         'gheDataArray_booked' => array_filter($gheDataArray, function($g) { return $g['isBooked']; })
     ]);
     
     // Xác định loại xe dựa trên số ghế
     $loaiXe = 34; // Mặc định
     if ($chuyen->xe && $chuyen->xe->SoGhe) {
-        $loaiXe = $chuyen->xe->SoGhe;
+        $soGheXe = $chuyen->xe->SoGhe;
+        // Xe thường: 41-42 ghế đều dùng layout 42
+        if ($soGheXe == 41 || $soGheXe == 42) {
+            $loaiXe = 42;
+        } else {
+            $loaiXe = $soGheXe;
+        }
     } elseif ($tongGhe > 0) {
-        $loaiXe = $tongGhe;
+        // Xe thường: 41-42 ghế đều dùng layout 42
+        if ($tongGhe == 41 || $tongGhe == 42) {
+            $loaiXe = 42;
+        } else {
+            $loaiXe = $tongGhe;
+        }
     }
 @endphp
 
@@ -206,6 +255,13 @@
     justify-content: center;
     flex-wrap: wrap;
     margin: 20px 0;
+}
+
+.floor-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
 }
 
 .floor-container {
@@ -321,6 +377,9 @@
 const gheData = @json($gheDataArray);
 const loaiXe = {{ $loaiXe }};
 
+// Ghế đã chọn tạm thời (từ session, khi quay lại từ màn thanh toán)
+const initialSelectedSeats = @json($selectedSeats ?? []);
+
 // Tạo map để tra cứu nhanh: soGhe -> maGhe
 const gheMap = {};
 gheData.forEach(g => {
@@ -352,6 +411,7 @@ console.log('======================');
 // Định nghĩa layout ghế
 const seatLayouts = {
     '34': {
+        // Limousine: 17 ghế tầng trên, 17 ghế tầng dưới
         floor1: [
             [['A03'], ['A02'], ['A01']],
             [['A06'], ['A05'], ['A04']],
@@ -369,25 +429,49 @@ const seatLayouts = {
             [['B17'], [], ['B16']]
         ]
     },
-    '41': {
+    '42': {
+        // Xe thường: 21 ghế tầng trên, 21 ghế tầng dưới
+        // Layout 3 cột: trái, giữa, phải (7 hàng x 3 ghế = 21 ghế)
         floor1: [
+            // Hàng 1: A01 (phải), A02 (giữa), A03 (trái)
             [['A03'], ['A02'], ['A01']],
+            // Hàng 2: A04 (phải), A05 (giữa), A06 (trái)
             [['A06'], ['A05'], ['A04']],
+            // Hàng 3: A07 (phải), A08 (giữa), A09 (trái)
             [['A09'], ['A08'], ['A07']],
+            // Hàng 4: A10 (phải), A11 (giữa), A12 (trái)
             [['A12'], ['A11'], ['A10']],
-            [['A14'], ['A13'], []],
+            // Hàng 5: A13 (phải), A14 (giữa), A15 (trái)
+            [['A15'], ['A14'], ['A13']],
+            // Hàng 6: A16 (phải), A17 (giữa), A18 (trái)
+            [['A18'], ['A17'], ['A16']],
+            // Hàng 7: A19 (phải), A20 (giữa), A21 (trái)
+            [['A21'], ['A20'], ['A19']]
         ],
         floor2: [
+            // Hàng 1: B01 (phải), B02 (giữa), B03 (trái)
             [['B03'], ['B02'], ['B01']],
+            // Hàng 2: B04 (phải), B05 (giữa), B06 (trái)
             [['B06'], ['B05'], ['B04']],
+            // Hàng 3: B07 (phải), B08 (giữa), B09 (trái)
             [['B09'], ['B08'], ['B07']],
+            // Hàng 4: B10 (phải), B11 (giữa), B12 (trái)
             [['B12'], ['B11'], ['B10']],
-            [['B14'], ['B13'], []],
+            // Hàng 5: B13 (phải), B14 (giữa), B15 (trái)
+            [['B15'], ['B14'], ['B13']],
+            // Hàng 6: B16 (phải), B17 (giữa), B18 (trái)
+            [['B18'], ['B17'], ['B16']],
+            // Hàng 7: B19 (phải), B20 (giữa), B21 (trái)
+            [['B21'], ['B20'], ['B19']]
         ]
     }
 };
 
-let selectedSeats = []; // Mảng lưu các ghế đã chọn: [{maGhe, soGhe}, ...]
+// Mảng lưu các ghế đã chọn: [{maGhe, soGhe}, ...]
+let selectedSeats = initialSelectedSeats.map(s => ({
+    maGhe: s.MaGhe,
+    soGhe: s.SoGhe
+}));
 const giaVe = {{ $chuyen->GiaVe }};
 
 function getSeatInfo(soGhe) {
@@ -479,112 +563,147 @@ function updateSeatSelection() {
         soGheDaChon + ' ghế × ' + giaVe.toLocaleString('vi-VN') + ' VND';
 }
 
+function isSeatSelected(maGhe) {
+    return selectedSeats.some(s => s.maGhe == maGhe);
+}
+
+// Biến lưu tầng hiện tại (1 hoặc 2)
+let currentFloor = 1;
+
+function switchFloor(floor) {
+    currentFloor = floor;
+    renderSeatMap();
+}
+
 function renderSeatMap() {
-    const layout = seatLayouts[loaiXe.toString()] || seatLayouts['34'];
+    // Xe 41-42 ghế đều dùng layout 42
+    let layoutKey = loaiXe.toString();
+    if (layoutKey === '41' || layoutKey === '42') {
+        layoutKey = '42'; // Dùng layout 42 cho cả xe 41 và 42 ghế
+    }
+    const layout = seatLayouts[layoutKey] || seatLayouts['34'];
     const container = document.getElementById('seatMapContainer');
+    
+    // Debug: Log để kiểm tra
+    console.log('=== SEAT MAP DEBUG ===');
+    console.log('loaiXe (from server):', loaiXe);
+    console.log('layoutKey (used):', layoutKey);
+    console.log('currentFloor:', currentFloor);
+    console.log('======================');
     
     let html = '<div class="seat-map-wrapper">';
     
-    // Tầng 1
-    html += '<div class="floor-container">';
-    html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 1</div>';
-    html += '<div class="driver-seat"><i class="fas fa-steering-wheel"></i></div>';
-    
-    layout.floor1.forEach(row => {
-        html += '<div class="seat-row">';
-        row.forEach((column, colIndex) => {
-            if (column && column.length > 0) {
-                column.forEach(soGhe => {
-                    const seatInfo = getSeatInfo(soGhe);
-                    if (seatInfo.maGhe) {
-                        // Có ghế trong hệ thống
-                        if (seatInfo.isBooked === true || seatInfo.isBooked === 1) {
-                            // Ghế đã đặt - hiển thị màu đỏ, không thể click
-                            html += `<div class="seat-item seat-booked" 
-                                         data-ma-ghe="${seatInfo.maGhe}" 
-                                         data-so-ghe="${seatInfo.soGhe}"
-                                         data-is-booked="true"
-                                         title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}"
-                                         style="cursor: not-allowed !important; background: #dc3545 !important; color: white !important; border-color: #c82333 !important;">
-                                         ${seatInfo.soGhe}
-                                     </div>`;
+    // Chỉ hiển thị tầng được chọn
+    if (currentFloor === 1) {
+        // Tầng 1
+        html += '<div class="floor-container">';
+        html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 1</div>';
+        html += '<div class="driver-seat"><i class="fas fa-steering-wheel"></i></div>';
+        
+        layout.floor1.forEach(row => {
+            html += '<div class="seat-row">';
+            row.forEach((column, colIndex) => {
+                if (column && column.length > 0) {
+                    column.forEach(soGhe => {
+                        const seatInfo = getSeatInfo(soGhe);
+                        if (seatInfo.maGhe) {
+                            // Có ghế trong hệ thống
+                            const alreadySelected = isSeatSelected(seatInfo.maGhe);
+                            if (seatInfo.isBooked === true || seatInfo.isBooked === 1) {
+                                // Ghế đã đặt - hiển thị màu đỏ, không thể click
+                                html += `<div class="seat-item seat-booked" 
+                                             data-ma-ghe="${seatInfo.maGhe}" 
+                                             data-so-ghe="${seatInfo.soGhe}"
+                                             data-is-booked="true"
+                                             title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}"
+                                             style="cursor: not-allowed !important; background: #dc3545 !important; color: white !important; border-color: #c82333 !important;">
+                                             ${seatInfo.soGhe}
+                                         </div>`;
+                            } else {
+                                // Ghế trống - có thể chọn (hoặc đang được chọn lại từ session)
+                                const seatClass = alreadySelected ? 'seat-item seat-selected' : 'seat-item seat-empty';
+                                const onClick = `onclick="selectSeat('${seatInfo.maGhe}', '${seatInfo.soGhe}')"`
+                                html += `<div class="${seatClass}" 
+                                             data-ma-ghe="${seatInfo.maGhe}" 
+                                             data-so-ghe="${seatInfo.soGhe}"
+                                             ${onClick}
+                                             title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}">
+                                             ${seatInfo.soGhe}
+                                         </div>`;
+                            }
                         } else {
-                            // Ghế trống - có thể chọn
+                            // Không có ghế trong hệ thống - hiển thị giống ghế trống
                             html += `<div class="seat-item seat-empty" 
-                                         data-ma-ghe="${seatInfo.maGhe}" 
-                                         data-so-ghe="${seatInfo.soGhe}"
-                                         onclick="selectSeat('${seatInfo.maGhe}', '${seatInfo.soGhe}')"
-                                         title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}">
-                                         ${seatInfo.soGhe}
-                                     </div>`;
-                        }
-                    } else {
-                        // Không có ghế trong hệ thống
-                        html += `<div class="seat-item seat-booked" 
-                                     title="Ghế ${soGhe} - Không có trong hệ thống"
-                                     style="opacity: 0.3; cursor: default;">
+                                     title="Ghế ${soGhe} - Trống"
+                                     onclick="alert('Ghế ${soGhe} chưa được thiết lập trong hệ thống. Vui lòng liên hệ nhà xe.')"
+                                     style="cursor: pointer;">
                                      ${soGhe}
                                  </div>`;
-                    }
-                });
-            }
-            if (colIndex < row.length - 1) {
-                html += '<div class="aisle"></div>';
-            }
+                        }
+                    });
+                }
+                if (colIndex < row.length - 1) {
+                    html += '<div class="aisle"></div>';
+                }
+            });
+            html += '</div>';
         });
         html += '</div>';
-    });
-    html += '</div>';
-    
-    // Tầng 2
-    html += '<div class="floor-container">';
-    html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 2</div>';
-    
-    layout.floor2.forEach(row => {
-        html += '<div class="seat-row">';
-        row.forEach((column, colIndex) => {
-            if (column && column.length > 0) {
-                column.forEach(soGhe => {
-                    const seatInfo = getSeatInfo(soGhe);
-                    if (seatInfo.maGhe) {
-                        // Có ghế trong hệ thống
-                        if (seatInfo.isBooked === true || seatInfo.isBooked === 1) {
-                            // Ghế đã đặt - hiển thị màu đỏ, không thể click
-                            html += `<div class="seat-item seat-booked" 
-                                         data-ma-ghe="${seatInfo.maGhe}" 
-                                         data-so-ghe="${seatInfo.soGhe}"
-                                         data-is-booked="true"
-                                         title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}"
-                                         style="cursor: not-allowed !important; background: #dc3545 !important; color: white !important; border-color: #c82333 !important;">
-                                         ${seatInfo.soGhe}
-                                     </div>`;
+    } else {
+        // Tầng 2
+        html += '<div class="floor-container">';
+        html += '<div class="floor-title"><i class="fas fa-layer-group me-2"></i>Tầng 2</div>';
+        
+        layout.floor2.forEach(row => {
+            html += '<div class="seat-row">';
+            row.forEach((column, colIndex) => {
+                if (column && column.length > 0) {
+                    column.forEach(soGhe => {
+                        const seatInfo = getSeatInfo(soGhe);
+                        if (seatInfo.maGhe) {
+                            // Có ghế trong hệ thống
+                            const alreadySelected = isSeatSelected(seatInfo.maGhe);
+                            if (seatInfo.isBooked === true || seatInfo.isBooked === 1) {
+                                // Ghế đã đặt - hiển thị màu đỏ, không thể click
+                                html += `<div class="seat-item seat-booked" 
+                                             data-ma-ghe="${seatInfo.maGhe}" 
+                                             data-so-ghe="${seatInfo.soGhe}"
+                                             data-is-booked="true"
+                                             title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}"
+                                             style="cursor: not-allowed !important; background: #dc3545 !important; color: white !important; border-color: #c82333 !important;">
+                                             ${seatInfo.soGhe}
+                                         </div>`;
+                            } else {
+                                // Ghế trống - có thể chọn (hoặc đang được chọn lại từ session)
+                                const seatClass = alreadySelected ? 'seat-item seat-selected' : 'seat-item seat-empty';
+                                const onClick = `onclick="selectSeat('${seatInfo.maGhe}', '${seatInfo.soGhe}')"`
+                                html += `<div class="${seatClass}" 
+                                             data-ma-ghe="${seatInfo.maGhe}" 
+                                             data-so-ghe="${seatInfo.soGhe}"
+                                             ${onClick}
+                                             title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}">
+                                             ${seatInfo.soGhe}
+                                         </div>`;
+                            }
                         } else {
-                            // Ghế trống - có thể chọn
+                            // Không có ghế trong hệ thống - hiển thị giống ghế trống
                             html += `<div class="seat-item seat-empty" 
-                                         data-ma-ghe="${seatInfo.maGhe}" 
-                                         data-so-ghe="${seatInfo.soGhe}"
-                                         onclick="selectSeat('${seatInfo.maGhe}', '${seatInfo.soGhe}')"
-                                         title="Ghế ${seatInfo.soGhe} - ${seatInfo.status}">
-                                         ${seatInfo.soGhe}
-                                     </div>`;
-                        }
-                    } else {
-                        // Không có ghế trong hệ thống
-                        html += `<div class="seat-item seat-booked" 
-                                     title="Ghế ${soGhe} - Không có trong hệ thống"
-                                     style="opacity: 0.3; cursor: default;">
+                                     title="Ghế ${soGhe} - Trống"
+                                     onclick="alert('Ghế ${soGhe} chưa được thiết lập trong hệ thống. Vui lòng liên hệ nhà xe.')"
+                                     style="cursor: pointer;">
                                      ${soGhe}
                                  </div>`;
-                    }
-                });
-            }
-            if (colIndex < row.length - 1) {
-                html += '<div class="aisle"></div>';
-            }
+                        }
+                    });
+                }
+                if (colIndex < row.length - 1) {
+                    html += '<div class="aisle"></div>';
+                }
+            });
+            html += '</div>';
         });
         html += '</div>';
-    });
-    html += '</div>';
+    }
     
     html += '</div>';
     
@@ -594,6 +713,10 @@ function renderSeatMap() {
 // Khởi tạo khi trang load
 document.addEventListener('DOMContentLoaded', function() {
     renderSeatMap();
+    // Nếu có ghế đã chọn từ trước, cập nhật lại summary và tổng tiền
+    if (selectedSeats.length > 0) {
+        updateSeatSelection();
+    }
     
     // Validate form: yêu cầu chọn đủ số ghế trước khi submit
     const form = document.querySelector('form');

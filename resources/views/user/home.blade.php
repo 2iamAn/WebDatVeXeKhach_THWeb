@@ -206,7 +206,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label text-dark">Ngày đi</label>
-                            <input type="date" name="ngay_di" class="form-control">
+                            <input type="date" name="ngay_di" class="form-control" min="{{ date('Y-m-d') }}">
                         </div>
                     </div>
                     <div class="text-center mt-4">
