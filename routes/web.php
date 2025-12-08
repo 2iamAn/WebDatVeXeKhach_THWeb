@@ -12,7 +12,6 @@ use App\Http\Controllers\TuyenDuongController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\AdminPartnerController;
 use App\Http\Controllers\DatVeController;
 use App\Http\Controllers\DanhGiaController;
 use App\Http\Controllers\ContactController;
@@ -236,6 +235,7 @@ Route::prefix('partner')->name('partner.')->group(function () {
     Route::get('/routes/edit/{id}', [PartnerController::class, 'editRoute'])->name('routes.edit');
     Route::post('/routes/update/{id}', [PartnerController::class, 'updateRoute'])->name('routes.update');
     Route::get('/routes/delete/{id}', [PartnerController::class, 'deleteRoute'])->name('routes.delete');
+    Route::get('/routes/toggle/{id}', [PartnerController::class, 'toggleRouteStatus'])->name('routes.toggle');
     
     // Quản lý xe
     Route::get('/vehicles', [PartnerController::class, 'vehicles'])->name('vehicles');

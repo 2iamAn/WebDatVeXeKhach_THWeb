@@ -858,7 +858,7 @@
                                             <span>Thông tin nhà xe</span>
                                             <i class="fas fa-chevron-down" id="info-arrow-{{ $chuyen->MaChuyenXe }}"></i>
                                         </button>
-                                        <a href="{{ route('datve.create', ['ma_chuyen' => $chuyen->MaChuyenXe]) }}" class="btn-book-now">
+                                        <a href="{{ route('datve.create', ['ma_chuyen' => $chuyen->MaChuyenXe, 'so_ghe' => $request->so_ghe ?? 1]) }}" class="btn-book-now">
                                             Đặt Ngay
                                         </a>
                                     </div>

@@ -16,11 +16,25 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
+/**
+ * Controller xử lý chức năng đối tác nhà xe
+ * 
+ * Bao gồm các chức năng:
+ * - Đăng ký hợp tác nhà xe
+ * - Dashboard thống kê
+ * - Quản lý chuyến xe (thêm, sửa, xóa)
+ * - Quản lý tuyến đường
+ * - Quản lý xe
+ * - Xem sơ đồ ghế và thông tin đặt vé
+ */
 class PartnerController extends Controller
 {
+    /**
+     * Hiển thị form đăng ký hợp tác nhà xe
+     * Yêu cầu email phải được xác thực trước
+     */
     public function showRegisterForm(): View|RedirectResponse
     {
-        // Kiểm tra email đã được xác thực chưa
         $emailVerified = session('email_verified', false);
         $verifiedEmail = session('verified_email');
         
@@ -48,9 +62,12 @@ class PartnerController extends Controller
         ]);
     }
 
+    /**
+     * Xử lý gửi yêu cầu đăng ký hợp tác
+     * Tạo tài khoản nhà xe và chờ admin phê duyệt
+     */
     public function sendRequest(Request $request)
     {
-        // Kiểm tra email đã được xác thực - Kiểm tra cả session và database
         $emailVerified = session('email_verified', false);
         $verifiedEmail = session('verified_email');
         
@@ -189,7 +206,10 @@ class PartnerController extends Controller
             ->with('pending_approval', true);
     }
 
-    // Dashboard cho nhà xe
+    /**
+     * Hiển thị dashboard thống kê cho nhà xe
+     * Bao gồm: tổng chuyến, vé đã bán, doanh thu ngày/tháng
+     */
     public function dashboard()
     {
         $maNhaXe = $this->ensurePartner();
@@ -234,6 +254,11 @@ class PartnerController extends Controller
         return view('partner.dashboard', $stats);
     }
     
+/**
+ * Kiểm tra và lấy mã nhà xe của partner đang đăng nhập
+ * @throws \Symfony\Component\HttpKernel\Exception\HttpException Nếu không có quyền
+ * @return int Mã nhà xe
+ */
 private function ensurePartner()
 {
     if (session('role') !== 'partner' || !session('user')) {
@@ -250,6 +275,10 @@ private function ensurePartner()
     return $nhaxe->MaNhaXe;
 }
 
+/**
+ * Hiển thị danh sách chuyến xe của nhà xe
+ * Hỗ trợ lọc theo tháng và ngày
+ */
 public function trips(Request $request)
 {
     $maNhaXe = $this->ensurePartner();
@@ -320,6 +349,10 @@ public function trips(Request $request)
     return view('partner.trips.index', compact('trips', 'selectedMonth', 'selectedDate', 'daysWithTrips'));
 }
 
+/**
+ * Hiển thị sơ đồ ghế của các chuyến xe
+ * Cho phép xem thông tin đặt vé chi tiết
+ */
 public function seats(Request $request)
 {
     $maNhaXe = $this->ensurePartner();
@@ -870,12 +903,26 @@ public function updateTrip(Request $request, $id)
     return redirect()->route('partner.trips')->with('success', $message);
 }
 
+/**
+ * Xóa chuyến xe
+ * Ràng buộc: Chỉ xóa chuyến khi chưa có vé nào được đặt
+ */
 public function deleteTrip($id)
 {
     $maNhaXe = $this->ensurePartner();
     $chuyen = ChuyenXe::where('MaChuyenXe', $id)
         ->where('MaNhaXe', $maNhaXe)
         ->firstOrFail();
+    
+    // Kiểm tra ràng buộc: Chỉ xóa chuyến khi chưa có vé nào được đặt
+    $hasActiveTickets = VeXe::where('MaChuyenXe', $id)
+        ->chuaHuy() // Chỉ lấy vé chưa hủy
+        ->exists();
+
+    if ($hasActiveTickets) {
+        return redirect()->route('partner.trips')
+            ->with('error', 'Không thể xóa chuyến xe! Chuyến xe này đang có vé đang được đặt. Vui lòng hủy hoặc xử lý các vé trước khi xóa chuyến.');
+    }
     
     $chuyen->delete();
     return redirect()->route('partner.trips')->with('success', 'Xóa chuyến xe thành công!');
@@ -1074,6 +1121,52 @@ public function deleteRoute($id)
 
     $route->delete();
     return redirect()->route('partner.routes')->with('success', 'Xóa tuyến đường thành công!');
+}
+
+/**
+ * Ngưng hoặc kích hoạt lại tuyến đường
+ * Chỉ cho phép với tuyến đã được phê duyệt
+ * Ràng buộc: Chỉ ngưng tuyến khi không có vé nào đang được đặt
+ */
+public function toggleRouteStatus($id)
+{
+    $maNhaXe = $this->ensurePartner();
+    
+    $route = TuyenDuong::where('MaNhaXe', $maNhaXe)
+        ->findOrFail($id);
+
+    // Chỉ cho phép ngưng/kích hoạt tuyến đã được phê duyệt
+    if ($route->TrangThai != 'DaDuyet' && $route->TrangThai != 'NgungHoatDong') {
+        return redirect()->route('partner.routes')
+            ->with('error', 'Chỉ có thể ngưng/kích hoạt tuyến đường đã được phê duyệt!');
+    }
+
+    // Chuyển đổi trạng thái
+    if ($route->TrangThai == 'DaDuyet') {
+        // Kiểm tra ràng buộc: Chỉ ngưng tuyến khi không có vé nào đang được đặt
+        $hasActiveTickets = VeXe::whereHas('chuyenXe', function($query) use ($id, $maNhaXe) {
+            $query->where('MaTuyen', $id)
+                  ->where('MaNhaXe', $maNhaXe);
+        })
+        ->chuaHuy() // Chỉ lấy vé chưa hủy
+        ->exists();
+
+        if ($hasActiveTickets) {
+            return redirect()->route('partner.routes')
+                ->with('error', 'Không thể ngưng tuyến đường! Tuyến đường này đang có vé đang được đặt. Vui lòng hủy hoặc xử lý các vé trước khi ngưng tuyến.');
+        }
+
+        $route->TrangThai = 'NgungHoatDong';
+        $message = 'Đã ngưng hoạt động tuyến đường thành công!';
+    } else {
+        // Kích hoạt lại không cần kiểm tra ràng buộc
+        $route->TrangThai = 'DaDuyet';
+        $message = 'Đã kích hoạt lại tuyến đường thành công!';
+    }
+
+    $route->save();
+
+    return redirect()->route('partner.routes')->with('success', $message);
 }
 
 // ==================== QUẢN LÝ XE ====================

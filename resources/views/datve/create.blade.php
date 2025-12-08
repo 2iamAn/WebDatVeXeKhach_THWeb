@@ -67,7 +67,7 @@
                                                 id="soLuongGhe"
                                                 type="number"
                                                 class="form-control"
-                                                value="1"
+                                                value="{{ min($soGheTuTimKiem ?? 1, min(10, $soGheTrong)) }}"
                                                 min="1"
                                                 max="{{ min(10, $soGheTrong) }}"
                                                 oninput="if (this.value < 1) this.value = 1; if (this.value > {{ min(10, $soGheTrong) }}) this.value = {{ min(10, $soGheTrong) }}; updateSeatSelection();"

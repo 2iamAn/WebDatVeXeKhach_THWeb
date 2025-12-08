@@ -17,11 +17,27 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Controller xử lý chức năng quản trị viên
+ * 
+ * Bao gồm các chức năng:
+ * - Dashboard thống kê tổng quan
+ * - Quản lý người dùng (CRUD, phê duyệt)
+ * - Quản lý nhà xe (phê duyệt, từ chối)
+ * - Quản lý chuyến xe (phê duyệt, khóa)
+ * - Quản lý tuyến đường
+ * - Báo cáo thống kê doanh thu
+ */
 class AdminController extends Controller
 {
-    // ===========================
-    // DASHBOARD
-    // ===========================
+    /* ========================================
+     * DASHBOARD - Trang tổng quan quản trị
+     * ======================================== */
+    
+    /**
+     * Hiển thị dashboard với thống kê tổng quan
+     * Dữ liệu được cache 5 phút để tối ưu hiệu năng
+     */
     public function dashboard(): View
     {
         // Cache thống kê trong 5 phút để tối ưu performance
@@ -50,9 +66,13 @@ class AdminController extends Controller
         return view('admin.dashboard', $stats);
     }
 
-    // ===========================
-    // QUẢN LÝ USER
-    // ===========================
+    /* ========================================
+     * QUẢN LÝ NGƯỜI DÙNG
+     * ======================================== */
+    
+    /**
+     * Hiển thị danh sách tất cả người dùng
+     */
     public function users(): View
     {
         $users = NguoiDung::whereIn('LoaiNguoiDung', [NguoiDung::ROLE_KHACH_HANG, NguoiDung::ROLE_NHA_XE])
@@ -113,9 +133,13 @@ class AdminController extends Controller
         return back()->with('success', "Đã {$statusText} tài khoản thành công!");
     }
 
-    // ===========================
-    // QUẢN LÝ NHÀ XE
-    // ===========================
+    /* ========================================
+     * QUẢN LÝ NHÀ XE
+     * ======================================== */
+    
+    /**
+     * Hiển thị danh sách nhà xe (chờ duyệt và đã duyệt)
+     */
     public function partners(): View
     {
         $partners = NhaXe::with('nguoiDung')
@@ -165,9 +189,14 @@ class AdminController extends Controller
         return back()->with('success', 'Đã xoá nhà xe thành công!');
     }
 
-    // ===========================
-    // QUẢN LÝ CHUYẾN XE
-    // ===========================
+    /* ========================================
+     * QUẢN LÝ CHUYẾN XE
+     * ======================================== */
+    
+    /**
+     * Hiển thị danh sách chuyến xe theo trạng thái
+     * Hỗ trợ lọc theo nhà xe và tìm kiếm
+     */
     public function pendingTrips(Request $request): View
     {
         $query = ChuyenXe::with(['nhaXe', 'tuyenDuong', 'xe'])
@@ -281,9 +310,14 @@ class AdminController extends Controller
         return view('admin.trip_show', compact('chuyen'));
     }
 
-    // ===========================
-    // BÁO CÁO THỐNG KÊ
-    // ===========================
+    /* ========================================
+     * BÁO CÁO THỐNG KÊ
+     * ======================================== */
+    
+    /**
+     * Hiển thị báo cáo thống kê doanh thu
+     * Hỗ trợ lọc theo nhà xe và khoảng thời gian
+     */
     public function reports(Request $request): View
     {
         // Lấy danh sách nhà xe cho dropdown

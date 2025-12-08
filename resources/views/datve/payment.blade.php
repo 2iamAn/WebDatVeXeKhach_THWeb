@@ -58,7 +58,7 @@
                             <div class="col-md-6">
                                 <p><strong>Ghế đã đặt:</strong> 
                                     @if(isset($tatCaVe) && $tatCaVe->count() > 0)
-                                        {{ $tatCaVe->pluck('ghe.SoGhe')->filter()->implode(', ') }}
+                                        {{ $tatCaVe->map(function($ve) { return $ve->ghe->SoGhe ?? null; })->filter()->sort()->implode(', ') }}
                                     @else
                                         {{ $veXe->ghe->SoGhe ?? '---' }}
                                     @endif

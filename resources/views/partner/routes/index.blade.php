@@ -91,6 +91,11 @@
                                         <i class="fas fa-check-circle me-1"></i>
                                         Đã phê duyệt
                                     </span>
+                                @elseif($route->TrangThai == 'NgungHoatDong')
+                                    <span class="badge bg-secondary" style="font-size: 14px; padding: 8px 12px;">
+                                        <i class="fas fa-pause-circle me-1"></i>
+                                        Ngưng hoạt động
+                                    </span>
                                 @elseif($route->TrangThai == 'ChoDuyet')
                                     <span class="badge bg-warning text-dark" style="font-size: 14px; padding: 8px 12px;">
                                         <i class="fas fa-clock me-1"></i>
@@ -122,6 +127,14 @@
                                        title="Sửa">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    @if($route->TrangThai == 'DaDuyet' || $route->TrangThai == 'NgungHoatDong')
+                                        <a href="{{ route('partner.routes.toggle', $route->MaTuyen) }}"
+                                           class="btn btn-sm {{ $route->TrangThai == 'DaDuyet' ? 'btn-warning' : 'btn-success' }}"
+                                           onclick="return confirm('{{ $route->TrangThai == 'DaDuyet' ? 'Bạn có chắc chắn muốn ngưng hoạt động tuyến đường này?' : 'Bạn có chắc chắn muốn kích hoạt lại tuyến đường này?' }}')"
+                                           title="{{ $route->TrangThai == 'DaDuyet' ? 'Ngưng tuyến' : 'Kích hoạt lại' }}">
+                                            <i class="fas {{ $route->TrangThai == 'DaDuyet' ? 'fa-pause' : 'fa-play' }}"></i>
+                                        </a>
+                                    @endif
                                     <a href="{{ route('partner.routes.delete', $route->MaTuyen) }}"
                                        class="btn btn-sm btn-danger"
                                        onclick="return confirm('Bạn có chắc chắn muốn xóa tuyến đường này?')"

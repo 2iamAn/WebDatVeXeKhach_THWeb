@@ -29,12 +29,21 @@
                         
                         <p class="intro-paragraph">
                             <strong>Bustrip đối với hành khách:</strong><br>
-                           <strong> Bustrip</strong> là website trung gian hỗ trợ đặt vé xe khách, kết nối hành khách với các nhà xe uy tín trên các tuyến đường liên tỉnh. Thay vì phải gọi điện hoặc đến trực tiếp bến xe, bạn có thể truy cập Bustrip để tìm kiếm các chuyến xe phù hợp dựa trên điểm đi, điểm đến, ngày khởi hành, giờ chạy, loại xe và giá vé. Sau đó, bạn có thể tiến hành đặt vé và quản lý vé hoàn toàn trực tuyến.
+                           <strong> Bustrip</strong> là website trung gian hỗ trợ đặt vé xe khách,
+                            kết nối hành khách với các nhà xe uy tín trên các tuyến đường liên tỉnh. 
+                            Thay vì phải gọi điện hoặc đến trực tiếp bến xe, 
+                            bạn có thể truy cập Bustrip để tìm kiếm các chuyến xe phù hợp dựa trên điểm đi,
+                             điểm đến, ngày khởi hành, giờ chạy, loại xe và giá vé. Sau đó, bạn có thể tiến hành đặt vé và quản lý vé hoàn toàn trực tuyến.
                         </p>
 
                         <p class="intro-paragraph">
                             <strong>Bustrip đối với các nhà xe đối tác:</strong><br>
-                            <strong>Bustrip</strong> là kênh bán hàng và hệ thống quản lý đặt chỗ hiệu quả cho các nhà xe đối tác. Hệ thống cung cấp các chức năng quản lý chuyến xe, quản lý ghế, theo dõi số lượng vé đã bán và cập nhật tình trạng ghế theo thời gian thực. Những tính năng này giúp các nhà xe tối ưu hóa tỷ lệ lấp đầy ghế và tránh tình trạng đặt chỗ trùng lặp. Với giao diện thân thiện và quy trình đặt chỗ rõ ràng, minh bạch, Bustrip hướng tới trở thành nền tảng đặt vé xe khách tiện lợi, an toàn và đáng tin cậy cho cả hành khách và các nhà xe.
+                            <strong>Bustrip</strong> là kênh bán hàng và hệ thống quản lý đặt chỗ hiệu quả cho các nhà xe đối tác.
+                             Hệ thống cung cấp các chức năng quản lý chuyến xe, quản lý ghế, 
+                             theo dõi số lượng vé đã bán và cập nhật tình trạng ghế theo thời gian thực. 
+                             Những tính năng này giúp các nhà xe tối ưu hóa tỷ lệ lấp đầy ghế và tránh tình trạng đặt chỗ trùng lặp.
+                              Với giao diện thân thiện và quy trình đặt chỗ rõ ràng, minh bạch, Bustrip hướng tới trở thành nền tảng đặt vé xe khách tiện lợi,
+                               an toàn và đáng tin cậy cho cả hành khách và các nhà xe.
                         </p>
                     </div>
                 </div>

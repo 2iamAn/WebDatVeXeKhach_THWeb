@@ -805,19 +805,20 @@ input[type="radio"] {
 }
 
 .navbar-main .navbar-toggler {
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(26, 32, 44, 0.3);
   border-radius: 8px;
   padding: 7px 11px;
   transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .navbar-main .navbar-toggler:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(26, 32, 44, 0.05);
+  border-color: rgba(26, 32, 44, 0.6);
 }
 
 .navbar-main .navbar-toggler-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%231a202c' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 .navbar-brand {

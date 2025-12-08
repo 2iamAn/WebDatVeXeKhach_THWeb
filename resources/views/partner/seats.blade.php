@@ -45,29 +45,31 @@
         </div>
 
         <!-- Calendar và bộ lọc tháng -->
-        <div class="mb-4">
-            <form method="GET" action="{{ route('partner.seats') }}" id="monthFormSeats" class="mb-3">
+        <div class="mb-3">
+            <form method="GET" action="{{ route('partner.seats') }}" id="monthFormSeats" class="mb-2">
                 <div class="d-flex gap-2 align-items-center flex-wrap">
-                    <label for="month" class="form-label mb-0 d-flex align-items-center">
+                    <label for="month" class="form-label mb-0 d-flex align-items-center" style="font-size: 14px;">
                         <i class="fas fa-calendar-alt me-2 text-primary"></i>
-                        <strong>Chọn tháng:</strong>
+                        <strong>Tháng:</strong>
                     </label>
                     <input type="month" 
                            id="month" 
                            name="month" 
-                           class="form-control" 
-                           style="width: auto; border-radius: 10px;"
+                           class="form-control form-control-sm" 
+                           style="width: auto; max-width: 180px; border-radius: 8px; font-size: 14px;"
                            value="{{ $selectedMonth ?? now()->format('Y-m') }}"
                            onchange="document.getElementById('monthFormSeats').submit()">
                 </div>
             </form>
 
-            <!-- Calendar hiển thị các ngày -->
-            <div class="calendar-container mb-4" style="background: #f8f9fa; border-radius: 15px; padding: 20px;">
-                <h6 class="mb-3 text-center">
-                    <i class="fas fa-calendar me-2"></i>
-                    Lịch tháng {{ \Carbon\Carbon::parse($selectedMonth . '-01')->format('m/Y') }}
-                </h6>
+            <!-- Calendar hiển thị các ngày - Compact -->
+            <div class="calendar-container-compact mb-3" style="background: #f8f9fa; border-radius: 8px; padding: 8px; max-width: 380px;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <h6 class="mb-0" style="font-size: 12px; font-weight: 600; color: #495057;">
+                        <i class="fas fa-calendar me-1" style="font-size: 11px;"></i>
+                        {{ \Carbon\Carbon::parse($selectedMonth . '-01')->format('m/Y') }}
+                    </h6>
+                </div>
                 <div class="calendar-grid">
                     @php
                         $year = substr($selectedMonth, 0, 4);
@@ -79,44 +81,40 @@
                         $currentDate = $startDate->copy();
                     @endphp
                     
-                    <!-- Header các ngày trong tuần -->
-                    <div class="calendar-weekdays">
-                        <div class="calendar-weekday">CN</div>
-                        <div class="calendar-weekday">T2</div>
-                        <div class="calendar-weekday">T3</div>
-                        <div class="calendar-weekday">T4</div>
-                        <div class="calendar-weekday">T5</div>
-                        <div class="calendar-weekday">T6</div>
-                        <div class="calendar-weekday">T7</div>
-                    </div>
+                    <!-- Header các ngày trong tuần - nằm trong cùng grid với các ngày -->
+                    <div class="calendar-weekday-compact">CN</div>
+                    <div class="calendar-weekday-compact">T2</div>
+                    <div class="calendar-weekday-compact">T3</div>
+                    <div class="calendar-weekday-compact">T4</div>
+                    <div class="calendar-weekday-compact">T5</div>
+                    <div class="calendar-weekday-compact">T6</div>
+                    <div class="calendar-weekday-compact">T7</div>
                     
                     <!-- Các ngày trong tháng -->
-                    <div class="calendar-days">
-                        @while($currentDate <= $endDate)
-                            @php
-                                $dateStr = $currentDate->format('Y-m-d');
-                                $isCurrentMonth = $currentDate->month == $month;
-                                $isToday = $currentDate->isToday();
-                                $isSelected = $selectedDate == $dateStr;
-                                $tripCount = $daysWithTrips[$dateStr] ?? 0;
-                            @endphp
-                            <a href="{{ route('partner.seats', ['month' => $selectedMonth, 'date' => $dateStr]) }}" 
-                               class="calendar-day {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }} {{ $isSelected ? 'selected' : '' }}"
-                               title="{{ $isCurrentMonth ? $currentDate->format('d/m/Y') : '' }} - {{ $tripCount }} chuyến">
-                                <div class="calendar-day-number">{{ $currentDate->day }}</div>
-                                @if($tripCount > 0 && $isCurrentMonth)
-                                    <div class="calendar-day-badge">{{ $tripCount }}</div>
-                                @endif
-                            </a>
-                            @php $currentDate->addDay(); @endphp
-                        @endwhile
-                    </div>
+                    @while($currentDate <= $endDate)
+                        @php
+                            $dateStr = $currentDate->format('Y-m-d');
+                            $isCurrentMonth = $currentDate->month == $month;
+                            $isToday = $currentDate->isToday();
+                            $isSelected = $selectedDate == $dateStr;
+                            $tripCount = $daysWithTrips[$dateStr] ?? 0;
+                        @endphp
+                        <a href="{{ route('partner.seats', ['month' => $selectedMonth, 'date' => $dateStr]) }}" 
+                           class="calendar-day-compact {{ !$isCurrentMonth ? 'other-month' : '' }} {{ $isToday ? 'today' : '' }} {{ $isSelected ? 'selected' : '' }}"
+                           title="{{ $isCurrentMonth ? $currentDate->format('d/m/Y') : '' }} - {{ $tripCount }} chuyến">
+                            <div class="calendar-day-number-compact">{{ $currentDate->day }}</div>
+                            @if($tripCount > 0 && $isCurrentMonth)
+                                <div class="calendar-day-badge-compact">{{ $tripCount }}</div>
+                            @endif
+                        </a>
+                        @php $currentDate->addDay(); @endphp
+                    @endwhile
                 </div>
             </div>
         </div>
 
         @if($selectedDate)
-            <div class="alert alert-info mb-4">
+            <div class="alert alert-info mb-3 py-2" style="font-size: 14px;">
                 <i class="fas fa-info-circle me-2"></i>
                 Đang hiển thị sơ đồ ghế ngày <strong>{{ \Carbon\Carbon::parse($selectedDate)->format('d/m/Y') }}</strong>
             </div>
@@ -1685,116 +1683,124 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 /* Calendar styles */
-.calendar-container {
-    max-width: 100%;
+/* Calendar Compact Styles */
+.calendar-container-compact {
+    max-width: 380px;
 }
 
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
+    gap: 3px;
 }
 
-.calendar-weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.calendar-weekday {
+.calendar-weekday-compact {
     text-align: center;
-    font-weight: 700;
+    font-weight: 600;
     color: #4FB99F;
-    padding: 10px;
+    padding: 4px 2px;
     background: white;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 4px;
+    font-size: 10px;
 }
 
-.calendar-days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-}
-
-.calendar-day {
+.calendar-day-compact {
     aspect-ratio: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     background: white;
-    border-radius: 8px;
+    border-radius: 4px;
     text-decoration: none;
     color: #495057;
-    transition: all 0.3s;
+    transition: all 0.2s;
     position: relative;
-    padding: 5px;
-    border: 2px solid transparent;
+    padding: 2px;
+    border: 1px solid transparent;
+    min-height: 28px;
 }
 
-.calendar-day:hover {
+.calendar-day-compact:hover {
     background: #e9ecef;
-    transform: scale(1.05);
+    transform: scale(1.08);
     border-color: #4FB99F;
     z-index: 10;
+    box-shadow: 0 2px 8px rgba(79, 185, 159, 0.3);
 }
 
-.calendar-day.other-month {
+.calendar-day-compact.other-month {
     color: #adb5bd;
     background: #f8f9fa;
+    opacity: 0.6;
 }
 
-.calendar-day.today {
+.calendar-day-compact.today {
     background: #fff3cd;
     border-color: #ffc107;
     font-weight: 700;
 }
 
-.calendar-day.selected {
+.calendar-day-compact.selected {
     background: #4FB99F;
     color: white;
     font-weight: 700;
     border-color: #3a8f7a;
+    box-shadow: 0 2px 8px rgba(79, 185, 159, 0.4);
 }
 
-.calendar-day-number {
-    font-size: 16px;
+.calendar-day-number-compact {
+    font-size: 11px;
     font-weight: 600;
+    line-height: 1;
 }
 
-.calendar-day-badge {
+.calendar-day-badge-compact {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 1px;
+    right: 1px;
     background: #dc3545;
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 7px;
     font-weight: 700;
+    line-height: 1;
 }
 
-.calendar-day.selected .calendar-day-badge {
+.calendar-day-compact.selected .calendar-day-badge-compact {
     background: white;
     color: #4FB99F;
 }
 
 @media (max-width: 768px) {
-    .calendar-weekday,
-    .calendar-day-number {
-        font-size: 12px;
+    .calendar-container-compact {
+        max-width: 100%;
     }
     
-    .calendar-day-badge {
-        width: 16px;
-        height: 16px;
+    .calendar-weekday-compact {
         font-size: 9px;
+        padding: 3px 1px;
+    }
+    
+    .calendar-day-number-compact {
+        font-size: 10px;
+    }
+    
+    .calendar-day-badge-compact {
+        width: 10px;
+        height: 10px;
+        font-size: 6px;
+        top: 1px;
+        right: 1px;
+    }
+    
+    .calendar-day-compact {
+        min-height: 24px;
     }
 }
 </style>

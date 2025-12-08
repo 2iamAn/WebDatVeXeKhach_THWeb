@@ -41,16 +41,7 @@
           </div>
 
           <!-- Social Media -->
-          <div class="footer-section">
-            <h5 class="footer-heading">
-              <i class="fas fa-share-alt me-2"></i>Theo dõi chúng tôi
-            </h5>
-            <div class="social-links">
-              <a href="#" class="social-link" title="Facebook">
-                <i class="fab fa-facebook-f"></i>
-              </a>
-            </div>
-          </div>
+       
         </div>
         
         <!-- Cột giữa: Về Bustrip -->

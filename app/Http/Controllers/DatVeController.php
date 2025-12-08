@@ -10,208 +10,77 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * Controller xử lý đặt vé xe khách
+ * Bao gồm: hiển thị sơ đồ ghế, đặt vé, thanh toán
+ */
 class DatVeController extends Controller
 {
+    /** Các trạng thái vé bị hủy */
     private const TRANG_THAI_HUY = ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'];
 
-    public function create(int $ma_chuyen): View
+    /**
+     * Hiển thị trang chọn ghế và đặt vé
+     * @param Request $request Request hiện tại
+     * @param int $ma_chuyen Mã chuyến xe cần đặt vé
+     */
+    public function create(Request $request, int $ma_chuyen): View
     {
         $chuyen = ChuyenXe::with(['nhaXe', 'tuyenDuong', 'ghe', 'xe'])->findOrFail($ma_chuyen);
         
+        // Lấy số ghế từ query parameter (từ trang tìm kiếm)
+        $soGheTuTimKiem = max(1, min(10, (int)$request->query('so_ghe', 1)));
+        
         $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
         
-        // Tối ưu: Cache thông tin ghế đã đặt trong 1 phút
-        $cacheKey = "ghe_da_dat_chuyen_{$ma_chuyen}";
-        $gheData = Cache::remember($cacheKey, 60, function() use ($ma_chuyen) {
-            // CHỈ tính ghế đã đặt khi vé đã thanh toán thành công
-            // (để hiển thị chính xác số ghế đã bán)
-            // Logic này phải giống hệt với PartnerController để đảm bảo đồng bộ
-            
-            $gheDaDat = VeXe::where('MaChuyenXe', $ma_chuyen)
-                ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-                ->whereHas('thanhToan', function($q) {
-                    $q->where('TrangThai', 'Success');
-                })
-                ->pluck('MaGhe')
-                ->map(fn($id) => (int)$id)
-                ->unique()
-                ->toArray();
-            
-            $soGheDaDat = count($gheDaDat);
-            
-            // Debug log để kiểm tra
-            \Log::info('DatVeController - Ghế đã đặt', [
-                'ma_chuyen' => $ma_chuyen,
-                'soGheDaDat' => $soGheDaDat,
-                'gheDaDat' => $gheDaDat,
-            ]);
-            
-            return [
-                'soGheDaDat' => $soGheDaDat,
-                'gheDaDat' => $gheDaDat,
-            ];
-        });
-        
-        // Lấy dữ liệu từ cache
-        $soGheDaDat = $gheData['soGheDaDat'];
-        $gheDaDat = $gheData['gheDaDat'];
-        
-        // Đảm bảo $gheDaDat là mảng và chỉ chứa ghế từ vé đã thanh toán thành công
-        if (!is_array($gheDaDat)) {
-            $gheDaDat = [];
-        }
-        
-        // Kiểm tra lại để đảm bảo không có vé chưa thanh toán được tính vào
-        // (Double check để chắc chắn - BỎ QUA CACHE, LẤY TRỰC TIẾP TỪ DATABASE)
-        $gheDaDatVerified = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
-            ->whereHas('thanhToan', function($q) {
-                $q->where('TrangThai', 'Success');
-            })
-            ->pluck('MaGhe')
-            ->map(fn($id) => (int)$id)
-            ->unique()
-            ->toArray();
-        
-        // Debug: Kiểm tra xem có vé chưa thanh toán nào đang được tính vào không
-        $veChuaThanhToan = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->where('TrangThai', 'da_dat')
-            ->whereDoesntHave('thanhToan', function($q) {
-                $q->where('TrangThai', 'Success');
-            })
-            ->pluck('MaGhe')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
-        
-        \Log::info('DatVeController - Verify Ghế đã đặt', [
-            'ma_chuyen' => $ma_chuyen,
-            'gheDaDat_from_cache' => $gheDaDat,
-            'gheDaDat_verified' => $gheDaDatVerified,
-            'veChuaThanhToan_maGhe' => $veChuaThanhToan,
-            'soGheDaDat_verified' => count($gheDaDatVerified),
-        ]);
-        
-        // Sử dụng dữ liệu đã verify (BỎ QUA CACHE)
-        $gheDaDat = $gheDaDatVerified;
+        // Lấy danh sách ghế đã đặt (chỉ tính vé đã thanh toán thành công)
+        $gheDaDat = $this->layGheDaDat($ma_chuyen);
         $soGheDaDat = count($gheDaDat);
         
-        // Xóa cache cũ và cập nhật lại với dữ liệu đúng
-        Cache::forget($cacheKey);
-        Cache::put($cacheKey, [
-            'soGheDaDat' => $soGheDaDat,
-            'gheDaDat' => $gheDaDat,
-        ], 60);
+        // Lấy ghế đã đặt nhưng chưa thanh toán (để tránh đặt trùng)
+        $gheDaDatChuaThanhToan = $this->layGheChuaThanhToan($ma_chuyen);
         
-        // Lấy thêm danh sách ghế đã đặt nhưng chưa thanh toán và ghế bị khóa
-        // (để tránh double booking khi đặt vé, nhưng không tính vào số ghế đã đặt)
-        $gheDaDatChuaThanhToan = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->where('TrangThai', 'da_dat')
-            ->whereDoesntHave('thanhToan', function($q) {
-                $q->where('TrangThai', 'Success');
-            })
-            ->pluck('MaGhe')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
+        // Lấy ghế bị khóa/giữ chỗ
+        $gheBiKhoa = $this->layGheBiKhoa($ma_chuyen);
         
-        $gheBiKhoa = Ghe::where('MaChuyenXe', $ma_chuyen)
-            ->where(function($q) {
-                $q->where('TrangThai', 'Giữ chỗ')
-                  ->orWhere('TrangThai', 'giu cho');
-            })
-            ->pluck('MaGhe')
-            ->map(fn($id) => (int)$id)
-            ->toArray();
-        
-        // Hợp nhất để tránh double booking (nhưng không tính vào số ghế đã đặt)
+        // Hợp nhất các ghế không thể đặt
         $gheKhongTheDat = array_unique(array_merge($gheDaDat, $gheDaDatChuaThanhToan, $gheBiKhoa));
         
-        // Tính số ghế trống: chỉ tính ghế đã thanh toán thành công
+        // Tính số ghế trống (chỉ tính ghế đã thanh toán thành công)
         $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         
-        // Lấy tất cả ghế hiện có của chuyến (bao gồm cả ghế từ vé đã đặt)
-        $tatCaGhe = $chuyen->ghe()->orderBy('SoGhe')->get();
+        // Lấy tất cả ghế của chuyến
+        $tatCaGhe = $this->layTatCaGhe($chuyen, $gheDaDat, $ma_chuyen);
         
-        // Lấy thêm các ghế từ vé đã đặt (kể cả chưa thanh toán) nhưng chưa có trong bảng Ghe
-        if (!empty($gheDaDat)) {
-            $gheTuVe = Ghe::whereIn('MaGhe', $gheDaDat)
-                ->where('MaChuyenXe', $ma_chuyen)
-                ->get();
-            $maGheDaCo = $tatCaGhe->pluck('MaGhe')->toArray();
-            foreach ($gheTuVe as $ghe) {
-                if (!in_array($ghe->MaGhe, $maGheDaCo)) {
-                    $tatCaGhe->push($ghe);
-                }
-            }
-            $tatCaGhe = $tatCaGhe->sortBy('SoGhe')->values();
-        }
+        // Lấy danh sách ghế trống hiện tại
+        $gheTrong = $this->layGheTrong($chuyen, $gheKhongTheDat);
         
-        // Lấy thêm các ghế từ vé đã đặt nhưng chưa thanh toán
-        $gheTuVeChuaThanhToan = VeXe::where('MaChuyenXe', $ma_chuyen)
-            ->where('TrangThai', 'da_dat')
-            ->whereDoesntHave('thanhToan', function($query) {
-                $query->where('TrangThai', 'Success');
-            })
-            ->with('ghe')
-            ->get()
-            ->pluck('ghe')
-            ->filter()
-            ->unique('MaGhe');
-        
-        foreach ($gheTuVeChuaThanhToan as $ghe) {
-            if (!in_array($ghe->MaGhe, $tatCaGhe->pluck('MaGhe')->toArray())) {
-                $tatCaGhe->push($ghe);
-            }
-        }
-        $tatCaGhe = $tatCaGhe->sortBy('SoGhe')->values();
-        
-        // Danh sách ghế trống hiện tại (loại bỏ ghế đã đặt, ghế đã đặt chưa thanh toán, và ghế bị khóa)
-        $gheTrong = $chuyen->ghe()
-            ->whereNotIn('MaGhe', $gheKhongTheDat)
-            ->where(function($query) {
-                // Chỉ lấy ghế trống (không phải "Giữ chỗ")
-                $query->where('TrangThai', 'Trống')
-                      ->orWhere('TrangThai', 'trong')
-                      ->orWhereNull('TrangThai');
-            })
-            ->orderBy('SoGhe')
-            ->get();
-        
-        // Tạo ghế tự động nếu cần (lần load đầu tiên khi chưa có ghế trong DB)
+        // Tạo ghế tự động nếu chưa có
         if ($gheTrong->isEmpty() && $tongGhe > 0 && $soGheTrong > 0 && $chuyen->xe) {
-            $this->createSeatsForTrip($ma_chuyen, $chuyen->xe->SoGhe);
-
-            // Reload lại quan hệ ghế sau khi tạo
+            $this->taoGheChoChuyenXe($ma_chuyen, $chuyen->xe->SoGhe);
             $chuyen->refresh()->load('ghe');
-
-            // Cập nhật lại danh sách ghế trống (loại bỏ ghế đã đặt, ghế đã đặt chưa thanh toán, và ghế bị khóa)
-            $gheTrong = $chuyen->ghe()
-                ->whereNotIn('MaGhe', $gheKhongTheDat)
-                ->where(function($query) {
-                    // Chỉ lấy ghế trống (không phải "Giữ chỗ")
-                    $query->where('TrangThai', 'Trống')
-                          ->orWhere('TrangThai', 'trong')
-                          ->orWhereNull('TrangThai');
-                })
-                ->orderBy('SoGhe')
-                ->get();
-
-            // Cập nhật lại tất cả ghế để truyền xuống view (sử dụng cho sơ đồ ghế)
+            
+            $gheTrong = $this->layGheTrong($chuyen, $gheKhongTheDat);
             $tatCaGhe = $chuyen->ghe()->orderBy('SoGhe')->get();
-
-            // Cập nhật lại tổng số ghế và số ghế trống để hiển thị chính xác ngay lần đầu
             $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
             $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         }
         
         $user = session('user');
-        // Ghế đã chọn tạm thời (khi quay lại từ màn thanh toán)
         $selectedSeats = session('selectedSeats', []);
-        return view('datve.create', compact('chuyen', 'gheTrong', 'tatCaGhe', 'gheDaDat', 'user', 'tongGhe', 'soGheTrong', 'soGheDaDat', 'selectedSeats'));
+        
+        return view('datve.create', compact(
+            'chuyen', 'gheTrong', 'tatCaGhe', 'gheDaDat', 'user',
+            'tongGhe', 'soGheTrong', 'soGheDaDat', 'selectedSeats', 'soGheTuTimKiem'
+        ));
     }
 
+    /**
+     * Xử lý đặt vé
+     * Tạo vé cho các ghế được chọn
+     */
     public function store(Request $r): RedirectResponse
     {
         $validated = $r->validate([
@@ -226,21 +95,22 @@ class DatVeController extends Controller
 
         $chuyen = ChuyenXe::with(['xe', 'ghe', 'veXe.thanhToan'])->findOrFail($validated['MaChuyenXe']);
         
+        // Tính số ghế trống
         $tongGhe = $chuyen->ghe->count() ?: ($chuyen->xe?->SoGhe ?? 0);
-        // Chỉ tính ghế đã đặt khi vé đã thanh toán thành công
         $soGheDaDat = $chuyen->veXe->filter(fn($ve) => 
             !in_array(strtolower($ve->TrangThai ?? ''), array_map('strtolower', self::TRANG_THAI_HUY))
             && $ve->thanhToan && $ve->thanhToan->TrangThai === 'Success'
         )->count();
         $soGheTrong = max(0, $tongGhe - $soGheDaDat);
         
+        // Kiểm tra đủ ghế trống
         if ($soGheTrong < count($validated['MaGhe'])) {
             return redirect()->back()
-                ->with('error', "Chuyến xe này chỉ còn {$soGheTrong} ghế trống. Không thể đặt " . count($validated['MaGhe']) . " ghế!")
+                ->with('error', "Chuyến xe này chỉ còn {$soGheTrong} ghế trống!")
                 ->withInput();
         }
 
-        // Tối ưu: Sử dụng scope mới
+        // Kiểm tra ghế đã được đặt chưa
         $gheDaDat = VeXe::where('MaChuyenXe', $validated['MaChuyenXe'])
             ->daThanhToan()
             ->pluck('MaGhe')
@@ -257,15 +127,15 @@ class DatVeController extends Controller
                 ->withInput();
         }
 
+        // Tạo vé cho từng ghế
         $veXeList = [];
         $selectedSeats = [];
+        
         foreach ($validated['MaGhe'] as $maGhe) {
-            // Tối ưu: Sử dụng scope mới
             if (VeXe::where('MaGhe', $maGhe)->daThanhToan()->exists()) {
                 continue;
             }
             
-            // NgayDat sẽ được set tại thời điểm thanh toán
             $ve = VeXe::create([
                 'MaChuyenXe' => $validated['MaChuyenXe'],
                 'MaNguoiDung' => $validated['MaNguoiDung'],
@@ -275,11 +145,9 @@ class DatVeController extends Controller
             ]);
             $veXeList[] = $ve;
 
-            // Lưu thông tin ghế đã chọn để khi quay lại vẫn hiển thị
-            $soGhe = Ghe::find($maGhe)?->SoGhe;
             $selectedSeats[] = [
                 'MaGhe' => $maGhe,
-                'SoGhe' => $soGhe,
+                'SoGhe' => Ghe::find($maGhe)?->SoGhe,
             ];
         }
 
@@ -289,11 +157,10 @@ class DatVeController extends Controller
                 ->withInput();
         }
 
-        $tongTien = count($veXeList) * $chuyen->GiaVe;
-        
+        // Lưu thông tin vào session
         session([
             'veXeList' => collect($veXeList)->pluck('MaVe')->toArray(),
-            'tongTien' => $tongTien,
+            'tongTien' => count($veXeList) * $chuyen->GiaVe,
             'soGhe' => count($veXeList),
             'selectedSeats' => $selectedSeats,
         ]);
@@ -302,23 +169,33 @@ class DatVeController extends Controller
             ->with('success', 'Đặt vé thành công! Vui lòng thanh toán để hoàn tất.');
     }
 
+    /**
+     * Hiển thị trang thanh toán
+     * @param int $ma_ve Mã vé cần thanh toán
+     */
     public function payment(int $ma_ve): View
     {
-        // Refresh lại dữ liệu để đảm bảo lấy thông tin mới nhất sau khi thanh toán
         $veXe = VeXe::with(['chuyenXe.tuyenDuong', 'chuyenXe.nhaXe', 'ghe', 'nguoiDung'])
             ->findOrFail($ma_ve);
-        $veXe->refresh(); // Refresh để lấy dữ liệu mới nhất từ database
+        $veXe->refresh();
         
-        $veXeList = session('veXeList', [$ma_ve]);
-        $tongTien = session('tongTien', $veXe->chuyenXe->GiaVe);
-        $soGhe = session('soGhe', 1);
+        $veXeList = session('veXeList', []);
+        $tongTien = session('tongTien');
+        $soGhe = session('soGhe');
         
-        // Refresh lại tất cả vé để đảm bảo có dữ liệu mới nhất
-        $tatCaVe = VeXe::whereIn('MaVe', $veXeList)
-            ->with(['ghe', 'chuyenXe'])
-            ->get();
-        foreach ($tatCaVe as $ve) {
-            $ve->refresh();
+        // Lấy thông tin vé nếu session không có
+        if (empty($veXeList)) {
+            $tatCaVe = $this->layVeCungNhom($veXe);
+            $veXeList = $tatCaVe->pluck('MaVe')->toArray();
+            $tongTien = $tatCaVe->sum(fn($ve) => $ve->chuyenXe->GiaVe);
+            $soGhe = $tatCaVe->count();
+        } else {
+            $tatCaVe = VeXe::whereIn('MaVe', $veXeList)
+                ->with(['ghe', 'chuyenXe'])
+                ->get();
+            
+            $tongTien = $tongTien ?: $tatCaVe->sum(fn($ve) => $ve->chuyenXe->GiaVe);
+            $soGhe = $soGhe ?: $tatCaVe->count();
         }
         
         $daThanhToan = ThanhToan::whereIn('MaVe', $veXeList)
@@ -329,6 +206,10 @@ class DatVeController extends Controller
         return view('datve.payment', compact('veXe', 'tatCaVe', 'tongTien', 'soGhe', 'user', 'daThanhToan'));
     }
 
+    /**
+     * Xử lý thanh toán
+     * @param int $ma_ve Mã vé cần thanh toán
+     */
     public function processPayment(Request $r, int $ma_ve): RedirectResponse
     {
         $validated = $r->validate([
@@ -338,19 +219,19 @@ class DatVeController extends Controller
         $veXe = VeXe::with('chuyenXe')->findOrFail($ma_ve);
         $veXeList = session('veXeList', [$ma_ve]);
         
+        // Kiểm tra đã thanh toán chưa
         if (ThanhToan::whereIn('MaVe', $veXeList)->where('TrangThai', 'Success')->exists()) {
             return redirect()->back()->with('error', 'Các vé này đã được thanh toán rồi!');
         }
 
         $now = now();
+        
+        // Tạo thanh toán cho từng vé
         foreach ($veXeList as $maVe) {
             $ve = VeXe::with('chuyenXe')->find($maVe);
             if ($ve) {
-                // Cập nhật thời gian đặt vé đúng thời điểm thanh toán
                 $ve->NgayDat = $now;
                 $ve->save();
-                // Refresh lại để đảm bảo dữ liệu được cập nhật
-                $ve->refresh();
 
                 ThanhToan::create([
                     'MaVe' => $maVe,
@@ -362,19 +243,141 @@ class DatVeController extends Controller
             }
         }
 
-        // Xóa session selectedSeats khi thanh toán thành công
+        // Xóa session
         session()->forget(['veXeList', 'tongTien', 'soGhe', 'selectedSeats']);
 
         return redirect()->route('datve.payment', $ma_ve)
             ->with('payment_success', 'Thanh toán thành công! Cảm ơn bạn đã sử dụng dịch vụ.');
     }
 
-    private function createSeatsForTrip(int $maChuyenXe, int $soGheXe): void
+    /**
+     * Lấy danh sách ghế đã đặt (đã thanh toán thành công)
+     */
+    private function layGheDaDat(int $maChuyenXe): array
+    {
+        return VeXe::where('MaChuyenXe', $maChuyenXe)
+            ->whereNotIn('TrangThai', self::TRANG_THAI_HUY)
+            ->whereHas('thanhToan', fn($q) => $q->where('TrangThai', 'Success'))
+            ->pluck('MaGhe')
+            ->map(fn($id) => (int)$id)
+            ->unique()
+            ->toArray();
+    }
+
+    /**
+     * Lấy danh sách ghế đã đặt nhưng chưa thanh toán
+     */
+    private function layGheChuaThanhToan(int $maChuyenXe): array
+    {
+        return VeXe::where('MaChuyenXe', $maChuyenXe)
+            ->where('TrangThai', 'da_dat')
+            ->whereDoesntHave('thanhToan', fn($q) => $q->where('TrangThai', 'Success'))
+            ->pluck('MaGhe')
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+    }
+
+    /**
+     * Lấy danh sách ghế bị khóa/giữ chỗ
+     */
+    private function layGheBiKhoa(int $maChuyenXe): array
+    {
+        return Ghe::where('MaChuyenXe', $maChuyenXe)
+            ->whereIn('TrangThai', ['Giữ chỗ', 'giu cho'])
+            ->pluck('MaGhe')
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+    }
+
+    /**
+     * Lấy tất cả ghế của chuyến xe
+     */
+    private function layTatCaGhe($chuyen, array $gheDaDat, int $maChuyenXe)
+    {
+        $tatCaGhe = $chuyen->ghe()->orderBy('SoGhe')->get();
+        
+        // Thêm ghế từ vé đã đặt
+        if (!empty($gheDaDat)) {
+            $gheTuVe = Ghe::whereIn('MaGhe', $gheDaDat)
+                ->where('MaChuyenXe', $maChuyenXe)
+                ->get();
+            $maGheDaCo = $tatCaGhe->pluck('MaGhe')->toArray();
+            
+            foreach ($gheTuVe as $ghe) {
+                if (!in_array($ghe->MaGhe, $maGheDaCo)) {
+                    $tatCaGhe->push($ghe);
+                }
+            }
+        }
+        
+        // Thêm ghế từ vé chưa thanh toán
+        $gheTuVeChuaThanhToan = VeXe::where('MaChuyenXe', $maChuyenXe)
+            ->where('TrangThai', 'da_dat')
+            ->whereDoesntHave('thanhToan', fn($q) => $q->where('TrangThai', 'Success'))
+            ->with('ghe')
+            ->get()
+            ->pluck('ghe')
+            ->filter()
+            ->unique('MaGhe');
+        
+        foreach ($gheTuVeChuaThanhToan as $ghe) {
+            if (!in_array($ghe->MaGhe, $tatCaGhe->pluck('MaGhe')->toArray())) {
+                $tatCaGhe->push($ghe);
+            }
+        }
+        
+        return $tatCaGhe->sortBy('SoGhe')->values();
+    }
+
+    /**
+     * Lấy danh sách ghế trống
+     */
+    private function layGheTrong($chuyen, array $gheKhongTheDat)
+    {
+        return $chuyen->ghe()
+            ->whereNotIn('MaGhe', $gheKhongTheDat)
+            ->where(function($query) {
+                $query->where('TrangThai', 'Trống')
+                      ->orWhere('TrangThai', 'trong')
+                      ->orWhereNull('TrangThai');
+            })
+            ->orderBy('SoGhe')
+            ->get();
+    }
+
+    /**
+     * Lấy các vé cùng nhóm (đặt cùng lúc)
+     */
+    private function layVeCungNhom($veXe)
+    {
+        $tatCaVe = VeXe::where('MaChuyenXe', $veXe->MaChuyenXe)
+            ->where('MaNguoiDung', $veXe->MaNguoiDung)
+            ->whereHas('thanhToan', fn($q) => $q->where('TrangThai', 'Success'))
+            ->with(['ghe', 'chuyenXe'])
+            ->orderByDesc('NgayDat')
+            ->get();
+        
+        if ($tatCaVe->count() > 0) {
+            $ngayDatNhat = $tatCaVe->first()->NgayDat;
+            $tatCaVe = $tatCaVe->filter(function($ve) use ($ngayDatNhat) {
+                return $ve->NgayDat && $ve->NgayDat->format('Y-m-d H:i:s') === $ngayDatNhat->format('Y-m-d H:i:s');
+            })->values();
+        }
+        
+        return $tatCaVe;
+    }
+
+    /**
+     * Tạo ghế tự động cho chuyến xe
+     * @param int $maChuyenXe Mã chuyến xe
+     * @param int $soGheXe Số ghế của xe
+     */
+    private function taoGheChoChuyenXe(int $maChuyenXe, int $soGheXe): void
     {
         $seatConfigs = [
-            34 => [['A', 17], ['B', 17]], // Limousine: 17 trên, 17 dưới
-            42 => [['A', 21], ['B', 21]], // Xe thường: 21 trên, 21 dưới
-            41 => [['A', 14], ['B', 14], ['C', 13]], // Giữ lại cho tương thích ngược
+            34 => [['A', 17], ['B', 17]],
+            42 => [['A', 21], ['B', 21]],
+            41 => [['A', 14], ['B', 14], ['C', 13]],
         ];
 
         if (!isset($seatConfigs[$soGheXe])) {

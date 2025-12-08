@@ -7,6 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * Model Vé xe
+ * 
+ * Quản lý thông tin vé xe đã đặt
+ * 
+ * @property int $MaVe Mã vé (khóa chính)
+ * @property int $MaNguoiDung Mã người đặt
+ * @property int $MaChuyenXe Mã chuyến xe
+ * @property int $MaGhe Mã ghế
+ * @property \DateTime $NgayDat Ngày đặt vé
+ * @property float $GiaTaiThoiDiemDat Giá vé tại thời điểm đặt
+ * @property string $TrangThai Trạng thái vé
+ */
 class VeXe extends Model
 {
     use HasFactory;
@@ -29,39 +42,49 @@ class VeXe extends Model
         'GiaTaiThoiDiemDat' => 'decimal:2',
     ];
 
+    /**
+     * Quan hệ n-1 với chuyến xe
+     */
     public function chuyenXe(): BelongsTo
     {
         return $this->belongsTo(ChuyenXe::class, 'MaChuyenXe', 'MaChuyenXe');
     }
 
+    /**
+     * Quan hệ n-1 với người đặt
+     */
     public function nguoiDung(): BelongsTo
     {
         return $this->belongsTo(NguoiDung::class, 'MaNguoiDung', 'MaNguoiDung');
     }
 
+    /**
+     * Quan hệ 1-1 với thanh toán
+     */
     public function thanhToan(): HasOne
     {
         return $this->hasOne(ThanhToan::class, 'MaVe', 'MaVe');
     }
 
+    /**
+     * Quan hệ n-1 với ghế
+     */
     public function ghe(): BelongsTo
     {
         return $this->belongsTo(Ghe::class, 'MaGhe', 'MaGhe');
     }
 
     /**
-     * Scope để lấy các vé đã thanh toán thành công
+     * Scope lấy vé đã thanh toán thành công
      */
     public function scopeDaThanhToan($query)
     {
         return $query->whereNotIn('TrangThai', ['Hủy', 'Huy', 'Hoàn tiền', 'Hoan tien'])
-            ->whereHas('thanhToan', function($q) {
-                $q->where('TrangThai', 'Success');
-            });
+            ->whereHas('thanhToan', fn($q) => $q->where('TrangThai', 'Success'));
     }
 
     /**
-     * Scope để lấy các vé chưa hủy
+     * Scope lấy vé chưa hủy
      */
     public function scopeChuaHuy($query)
     {

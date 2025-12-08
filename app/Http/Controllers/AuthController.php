@@ -8,19 +8,25 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Controller xử lý xác thực người dùng
+ * Bao gồm: đăng ký, đăng nhập, đăng xuất
+ */
 class AuthController extends Controller
 {
+    /**
+     * Hiển thị form đăng ký
+     * Yêu cầu email phải được xác thực trước khi đăng ký
+     */
     public function showRegister(): View|RedirectResponse
     {
-        // Kiểm tra email đã được xác thực chưa - Kiểm tra cả session và database
         $emailVerified = session('email_verified', false);
         $verifiedEmail = session('verified_email');
         
-        // Nếu session không có, kiểm tra trong database (nếu có email trong query string)
+        // Kiểm tra xác thực email từ database nếu session không có
         if (!$emailVerified || !$verifiedEmail) {
             $requestEmail = request()->query('email');
             if ($requestEmail) {
@@ -41,28 +47,28 @@ class AuthController extends Controller
             }
         }
         
+        // Chuyển hướng đến trang xác thực nếu chưa xác thực
         if (!$emailVerified || !$verifiedEmail) {
             return redirect()->route('verification.email', ['type' => 'register'])
                 ->with('info', 'Vui lòng xác thực email trước khi đăng ký tài khoản.');
         }
         
-        return view('auth.register', [
-            'verified_email' => $verifiedEmail,
-        ]);
+        return view('auth.register', ['verified_email' => $verifiedEmail]);
     }
 
+    /**
+     * Xử lý đăng ký tài khoản mới
+     * Kiểm tra email đã xác thực và tạo tài khoản
+     */
     public function register(Request $request): RedirectResponse
     {
-        // Kiểm tra email đã được xác thực - Kiểm tra cả session và database
         $emailVerified = session('email_verified', false);
         $verifiedEmail = session('verified_email');
         
-        // Nếu session không có, kiểm tra trong database
+        // Khôi phục session từ database nếu cần
         if (!$emailVerified || !$verifiedEmail) {
-            // Kiểm tra email từ request
             $requestEmail = $request->input('Email');
             if ($requestEmail) {
-                // Kiểm tra trong database xem email đã được verify chưa
                 $dbVerification = DB::table('email_verifications')
                     ->where('email', $requestEmail)
                     ->where('type', 'register')
@@ -72,7 +78,6 @@ class AuthController extends Controller
                     ->first();
                 
                 if ($dbVerification) {
-                    // Email đã được verify trong DB, khôi phục session
                     session()->put('email_verified', true);
                     session()->put('verified_email', $requestEmail);
                     $emailVerified = true;
@@ -81,23 +86,12 @@ class AuthController extends Controller
             }
         }
         
-        // Debug: Log session để kiểm tra
-        Log::info('Registration attempt', [
-            'email_verified' => $emailVerified,
-            'verified_email' => $verifiedEmail,
-            'request_email' => $request->input('Email'),
-        ]);
-        
         if (!$emailVerified || !$verifiedEmail) {
-            Log::warning('Registration failed: Email not verified', [
-                'email_verified' => $emailVerified,
-                'verified_email' => $verifiedEmail,
-                'request_email' => $request->input('Email'),
-            ]);
             return redirect()->route('verification.email', ['type' => 'register'])
                 ->with('error', 'Vui lòng xác thực email trước khi đăng ký.');
         }
 
+        // Validate dữ liệu đầu vào
         $validated = $request->validate([
             'HoTen' => 'required|string|max:100|min:2',
             'TenDangNhap' => 'required|string|max:50|min:3|regex:/^[a-zA-Z0-9_]+$/',
@@ -105,42 +99,28 @@ class AuthController extends Controller
             'MatKhau' => 'required|string|min:4|max:255',
             'SDT' => 'required|string|max:15|min:10|regex:/^[0-9]+$/|unique:nguoidung,SDT',
         ], [
-            // HoTen
             'HoTen.required' => 'Vui lòng nhập họ và tên.',
             'HoTen.min' => 'Họ và tên phải có ít nhất 2 ký tự.',
             'HoTen.max' => 'Họ và tên không được vượt quá 100 ký tự.',
-            
-            // TenDangNhap
             'TenDangNhap.required' => 'Vui lòng nhập tên đăng nhập.',
             'TenDangNhap.min' => 'Tên đăng nhập phải có ít nhất 3 ký tự.',
             'TenDangNhap.max' => 'Tên đăng nhập không được vượt quá 50 ký tự.',
             'TenDangNhap.regex' => 'Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới (_).',
-            
-            // Email
             'Email.required' => 'Vui lòng nhập email.',
-            'Email.email' => 'Email không hợp lệ. Vui lòng nhập đúng định dạng email.',
+            'Email.email' => 'Email không hợp lệ.',
             'Email.max' => 'Email không được vượt quá 100 ký tự.',
-            'Email.unique' => 'Email này đã được sử dụng. Vui lòng chọn email khác.',
-            
-            // MatKhau
+            'Email.unique' => 'Email này đã được sử dụng.',
             'MatKhau.required' => 'Vui lòng nhập mật khẩu.',
             'MatKhau.min' => 'Mật khẩu phải có ít nhất 4 ký tự.',
-            'MatKhau.max' => 'Mật khẩu không được vượt quá 255 ký tự.',
-            
-            // SDT
             'SDT.required' => 'Vui lòng nhập số điện thoại.',
             'SDT.min' => 'Số điện thoại phải có ít nhất 10 chữ số.',
             'SDT.max' => 'Số điện thoại không được vượt quá 15 chữ số.',
-            'SDT.regex' => 'Số điện thoại chỉ được chứa các chữ số (0-9).',
-            'SDT.unique' => 'Số điện thoại này đã được sử dụng. Vui lòng chọn số khác.',
+            'SDT.regex' => 'Số điện thoại chỉ được chứa các chữ số.',
+            'SDT.unique' => 'Số điện thoại này đã được sử dụng.',
         ]);
 
-        // Kiểm tra email trong form phải khớp với email đã xác thực
+        // Kiểm tra email form phải khớp với email đã xác thực
         if ($validated['Email'] !== $verifiedEmail) {
-            Log::warning('Email mismatch', [
-                'form_email' => $validated['Email'],
-                'verified_email' => $verifiedEmail,
-            ]);
             return redirect()->back()
                 ->withErrors(['Email' => 'Email phải khớp với email đã xác thực: ' . $verifiedEmail])
                 ->withInput();
@@ -163,47 +143,36 @@ class AuthController extends Controller
             
             DB::commit();
             
-            Log::info('User registered successfully', [
-                'user_id' => $user->MaNguoiDung,
-                'email' => $user->Email,
-            ]);
+            Log::info('Đăng ký thành công', ['user_id' => $user->MaNguoiDung, 'email' => $user->Email]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Registration failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Đăng ký thất bại', ['error' => $e->getMessage()]);
             
             return redirect()->back()
                 ->withErrors(['error' => 'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.'])
                 ->withInput();
         }
 
-        // Lưu thông tin đăng nhập vào session để tự động điền vào form đăng nhập
-        $loginEmail = $validated['Email'];
-        $loginPassword = $validated['MatKhau'];
-
-        // Xóa session verification sau khi đăng ký thành công
+        // Lưu thông tin để tự động điền form đăng nhập
         session()->forget(['email_verified', 'verified_email', 'verification_email', 'verification_type']);
-
-        // Lưu thông tin đăng nhập vào session
         session([
-            'auto_login_email' => $loginEmail,
-            'auto_login_password' => $loginPassword,
+            'auto_login_email' => $validated['Email'],
+            'auto_login_password' => $validated['MatKhau'],
         ]);
 
         return redirect()->route('login.form')
-            ->with('success', 'Đăng ký thành công! Thông tin đăng nhập đã được điền sẵn, vui lòng nhấn nút đăng nhập.')
+            ->with('success', 'Đăng ký thành công! Thông tin đăng nhập đã được điền sẵn.')
             ->with('auto_fill', true);
     }
 
+    /**
+     * Hiển thị form đăng nhập
+     */
     public function showLogin(): View
     {
-        // Lấy thông tin đăng nhập tự động nếu có
         $autoEmail = session('auto_login_email');
         $autoPassword = session('auto_login_password');
         
-        // Xóa session sau khi lấy
         if ($autoEmail) {
             session()->forget(['auto_login_email', 'auto_login_password']);
         }
@@ -214,6 +183,10 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Xử lý đăng nhập
+     * Hỗ trợ đăng nhập bằng tên đăng nhập hoặc email
+     */
     public function login(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -221,6 +194,7 @@ class AuthController extends Controller
             'MatKhau' => 'required|string'
         ]);
 
+        // Tìm người dùng theo tên đăng nhập hoặc email
         $user = NguoiDung::where('TenDangNhap', $credentials['TenDangNhap'])
             ->orWhere('Email', $credentials['TenDangNhap'])
             ->first();
@@ -231,7 +205,7 @@ class AuthController extends Controller
             ]);
         }
 
-        // Kiểm tra nhà xe
+        // Kiểm tra tài khoản nhà xe đã được kích hoạt chưa
         if ($user->LoaiNguoiDung === NguoiDung::ROLE_NHA_XE) {
             if (!NhaXe::where('MaNguoiDung', $user->MaNguoiDung)->exists()) {
                 throw ValidationException::withMessages([
@@ -240,9 +214,11 @@ class AuthController extends Controller
             }
         }
 
+        // Tái tạo session và lưu thông tin đăng nhập
         session()->regenerate();
         session(['user' => $user, 'role' => $this->getUserRole($user->LoaiNguoiDung)]);
 
+        // Chuyển hướng theo loại người dùng
         return match($user->LoaiNguoiDung) {
             NguoiDung::ROLE_ADMIN => redirect()->route('admin.dashboard'),
             NguoiDung::ROLE_NHA_XE => redirect()->route('partner.dashboard'),
@@ -250,6 +226,9 @@ class AuthController extends Controller
         };
     }
 
+    /**
+     * Xử lý đăng xuất
+     */
     public function logout(): RedirectResponse
     {
         session()->invalidate();
@@ -257,21 +236,34 @@ class AuthController extends Controller
         return redirect('/');
     }
 
+    /**
+     * Trang chủ người dùng
+     */
     public function userHome(): View
     {
         return view('user.home');
     }
 
+    /**
+     * Trang chủ đối tác nhà xe
+     */
     public function partnerHome(): View
     {
         return view('partner.home');
     }
 
+    /**
+     * Trang chủ quản trị viên
+     */
     public function adminHome(): View
     {
         return view('admin.home');
     }
 
+    /**
+     * Tạo tên đăng nhập duy nhất
+     * Loại bỏ dấu tiếng Việt và thêm số nếu trùng
+     */
     private function generateUniqueUsername(string $base): string
     {
         $removeAccents = fn($str) => strtolower(preg_replace([
@@ -295,6 +287,9 @@ class AuthController extends Controller
         return $username;
     }
 
+    /**
+     * Lấy tên vai trò từ loại người dùng
+     */
     private function getUserRole(int $loaiNguoiDung): string
     {
         return match($loaiNguoiDung) {
